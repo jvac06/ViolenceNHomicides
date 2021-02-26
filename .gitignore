@@ -44,3 +44,4 @@ docs/
 examples/
 
 .python-version
+*.html
