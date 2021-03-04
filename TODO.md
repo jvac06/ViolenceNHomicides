@@ -21,7 +21,7 @@ March 11 \@ 8:30 am
 
     - Add definitions for columns (1- changes 2- source, 3- plain definition 4- rationale why/effect) 
         - Homicides, ~~DrugUsers~~, ~~Mental~~, Policies - KV
-        - ~~Guns~~, ~~LawEnforcement~~, ~~Violent~~, ~~Property Crime~~, ~~Alcohol~~, DrugAbuseBeds - JA
+        - ~~Guns~~, ~~LawEnforcement~~, ~~Violent~~, ~~Property Crime~~, ~~Alcohol~~, ~~DrugAbuseBeds~~ - JA
         - Population, RealGPD, Gini, Unemployment Rate, Ethnicity, Education, Age - HM
 
 - DESCRIBE PROBLEM & SIGFICANCE (3/8 - 5pm):
@@ -40,7 +40,8 @@ March 11 \@ 8:30 am
 - INCLUDE NEW DATA:
 
     - Education, Ethnicity, Age
-    - number of beds for substance abuse: [data](https://wwwdasis.samhsa.gov/dasis2/nssats.htm) - JA
+    - ~~number of beds for substance abuse: [data](https://wwwdasis.samhsa.gov/dasis2/nssats.htm) - JA~~
+    - Consider Marijuana legalization by year [data](https://www.ncsl.org/research/health/state-medical-marijuana-laws.aspx)
  
 # DONE:
 
