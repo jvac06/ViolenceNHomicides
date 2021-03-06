@@ -20,7 +20,7 @@ March 11 \@ 8:30 am
 - DO DATA TABLE (3/8 - 5pm):
 
     - Add definitions for columns (1- changes 2- source, 3- plain definition 4- rationale why/effect) 
-        - Homicides, ~~DrugUsers~~, ~~Mental~~, Policies - KV
+        - ~~Homicides~~, ~~DrugUsers~~, ~~Mental~~, ~~Policies~~ - KV
         - ~~Guns~~, ~~LawEnforcement~~, ~~Violent~~, ~~Property Crime~~, ~~Alcohol~~, ~~DrugAbuseBeds~~ - JA
         - Population, RealGPD, Gini, Unemployment Rate, Ethnicity, Education, Age - HM
 
