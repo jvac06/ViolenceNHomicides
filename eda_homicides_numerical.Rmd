@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: rmarkdown::github_document
+author: "Jesid"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: html_document
 ---
 
 
