@@ -2,7 +2,7 @@
 title: "R Notebook"
 author: "Jesid"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
-output: html_document
+output: html_notebook
 ---
 
 
