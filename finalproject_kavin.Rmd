@@ -1,0 +1,49 @@
+---
+title: "SDPProject_Kavin"
+author: "kavin"
+date: "3/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(glue)
+```
+
+```{r}
+df <- read_xlsx("C:/College/Courses/SDM/Github/ViolenceNHomicides/data/HomicideData_Original.xlsx", sheet = "HomicideData")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+df %>% 
+  ggplot(aes(NumHomicides)) + geom_density(color="red")
+```
+
+```{r}
+df %>% 
+  group_by(State) %>% 
+  summarize(mean(NumHomicides))
+```
+
+```{r}
+df %>% 
+  group_by(Year) %>% 
+  summarise(totalhomicides = sum(NumHomicides)) %>% 
+  ggplot(aes(Year,totalhomicides)) + geom_line() + scale_x_continuous()
+```
+```{r}
+
+```
+
