@@ -1,0 +1,180 @@
+---
+title: "Hammad Homicide"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Updating Libraries
+```{r echo=T, results='hide'}
+library(rio)
+library(formattable)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(stargazer)
+library(car)
+library(PerformanceAnalytics)
+library(tidyr)
+library(tm)
+library(MASS)
+library(AER)
+library(ggplot2)
+library(lubridate)
+library(lattice)
+library(lme4)
+library(MuMIn)
+library("ggridges")
+library("hrbrthemes")
+options(scipen = 999)
+```
+
+##Importing Data
+```{r}
+df<-read_xlsx("data/HomicideData_Hammad.xlsx",sheet = "HomicideData")
+```
+
+##Checking for nulls
+```{r}
+colSums(is.na(df))
+str(df)
+```
+
+##Converting to factor and releveling
+```{r}
+df$GunLawRank<-as.factor(df$GunLawRank)
+df$StateCode<-as.factor(df$StateCode)
+df$State<-as.factor(df$State)
+df$CannabisMedical<-as.factor(df$CannabisMedical)
+df$CannabisRecreational<-as.factor(df$CannabisRecreational)
+```
+
+```{r}
+summary(df)
+```
+
+##Calculating Homicide Rate
+```{r}
+df$HomicideRate<-(df$NumHomicides/df$Population)*100000
+glimpse(df)
+```
+
+##Scaling all numerical variables according to population for easier interpretation
+```{r}
+df$DrugUsers<-(df$NumDrugUsers/df$Population)*1000
+df$AlcoholUsers<-(df$NumAlcoholUsers/df$Population)*1000
+df$LawOfficers<-(df$LawEnforcementOfficers/df$Population)*10000
+df$LawCover<-(df$LawEnforcementOfficers/df$Area)*100
+df$GDP<-df$RealGDPperCapita/1000
+df$MentalIllness<-(df$SeriousMentalIllness/df$Population)*1000
+summary(df$MentalIllness)
+```
+
+```{r}
+df %>%
+  group_by(GunLawRank) %>%
+  ggplot()+
+  geom_boxplot(aes(x=GunLawRank,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+
+df %>%
+  group_by(CannabisMedical) %>%
+  ggplot()+
+  geom_boxplot(aes(x=CannabisMedical,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+
+df %>%
+  group_by(CannabisRecreational) %>%
+  ggplot()+
+  geom_boxplot(aes(x=CannabisRecreational,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+
+ggplot(data=df, aes(x=HomicideRate)) +
+  geom_histogram(aes(y=..density..), col='black', fill='white') +
+  geom_density(alpha=.6, fill="seagreen") +
+  labs(title = "Distribution of Homicides: All States & Years")
+
+
+ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  labs(title = 'Homicide Distribution by State') 
+
+ggplot(data=df, aes(x=HomicideRate, group = CannabisMedical, fill = CannabisMedical)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicides: All by Medical Cannabis")
+
+ggplot(data=df, aes(x=HomicideRate, group = CannabisRecreational, fill = CannabisRecreational)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicide Rate by Recreational Cannabis")
+
+
+ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicide Rate by Gun Laws Rank")
+
+ggplot(df, aes(x=Year, y=HomicideRate)) +
+  geom_point() +
+  labs(title="Relationship Log Beds vs. NumHomicides/Population")
+
+
+
+df2<-df %>% 
+  group_by(Year) %>%                        
+  summarise(MeanHomicide = mean(HomicideRate))  
+df2$Year<-as.factor(df2$Year)
+df2 %>%
+  ggplot( aes(x=Year, y=MeanHomicide)) +
+    geom_point(shape=21, color="black", fill="#69b3a2", size=6) +
+    geom_line( color="grey") +
+    theme_ipsum() +
+    ggtitle("Trend in Average Homicide Rates")
+
+```
+
+```{r}
+ggplot(df, aes(x=df$HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
+
+ggplot(df, aes(x=log(df$HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
+```
+##Dropping Columbia from the Model
+```{r}
+df<-df[ which(df$State!="District of Columbia"), ]
+```
+
+```{r}
+reg1<-lm(formula = HomicideRate~df$MentalIllness+df$GDP+df$LawOfficers+df$LawCover+df$AlcoholUsers+df$DrugUsers+df$`Big Cities`+df$Education+df$GunLawRank+df$Black+df$GiniIndex+State+Year,data = df)
+summary(reg1)
+
+
+#Checking for linearity
+plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
+abline(0,1,col="red3",lwd=3)
+
+#checking for normality
+qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
+qqline(reg1$residuals,lwd=3,col="red3")
+
+#Checking for equality of variances
+plot(df3$pricesold,rstandard(reg1),pch=20,main="Equality of Variances")
+abline(0,0,col="red",lwd=3)
+
+#Checking for leverage points
+lev=hat(model.matrix(reg1))
+plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
+abline(3*mean(lev),0,col="red",lwd=3)
+
+```
+```{r}
+colSums(is.na(df))
+```
