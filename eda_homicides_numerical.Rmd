@@ -1,0 +1,159 @@
+---
+title: "R Notebook"
+author: "Jesid"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: html_notebook
+---
+
+
+```{r}
+library(here)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+# Read Data
+```{r}
+df <- read_excel(here("data", "HomicideData_Original.xlsx"), sheet="HomicideData")
+colSums(is.na(df))
+```
+
+# Distribution of DV: All Years All States
+```{r}
+ggplot(data=df, aes(x=NumHomicides/Population)) +
+  geom_histogram(aes(y=..density..), col='black', fill='white') +
+  geom_density(alpha=.6, fill="pink") +
+  labs(title = "Distribution of Homicides: All States & Years")
+```
+
+```{r}
+# library
+library(ggridges)
+# library(viridis)
+# library(hrbrthemes)
+```
+
+
+# Distributions by Years
+```{r}
+
+# Plot
+ggplot(df, aes(x = NumHomicides/Population, y = Year, group= Year, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  labs(title = 'Homicide Distribution by Years') 
+```
+
+# Distributions by State
+```{r}
+temp <- df %>% filter(State != "DISTRICT OF COLUMBIA")
+# Plot
+ggplot(temp, aes(x = NumHomicides/Population, y = State, group= State, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  labs(title = 'Homicide Distribution by State') 
+
+```
+California as Middle
+Low: Idaho, Hawaii, Maine, Iowa, Massachusetts, etc
+High: Maryland, Michigan, Missouri, Tennessee, South Carolina, Louisiana 
+
+
+# Distribution: Cannabis Medical 
+```{r}
+df$CannabisMedical <- factor(df$CannabisMedical, levels = c(0,1), labels = c("No", "Yes"))
+
+ggplot(data=df, aes(x=log(NumHomicides), group = CannabisMedical, fill = CannabisMedical)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicides: All by Medical Cannabis")
+```
+
+```{r}
+df$CannabisRecreational <- factor(df$CannabisRecreational, levels = c(0,1), labels = c("No", "Yes"))
+
+ggplot(data=df, aes(x=log(NumHomicides), group= CannabisRecreational, fill = CannabisRecreational)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicides: All by Cannabis Legal")
+```
+
+# Beds vs Number of Homicides
+```{r}
+temp <- df %>% filter(!is.na(SubAbuseInpatientCareBeds))
+
+ggplot(temp, aes(x=log(SubAbuseInpatientCareBeds), y=NumHomicides/Population, col=round(Population,-4))) +
+  geom_point() +
+  geom_smooth() +
+  labs(title="Relationship Log Beds vs. NumHomicides/Population")
+  
+```
+
+# Law Enforcement Officers
+```{r}
+ggplot(df, aes(x=log(LawEnforcementOfficers), y=NumHomicides/Population, col=round(Population,-4))) +
+  geom_point(na.rm = T) +
+  geom_smooth(na.rm = T) +
+  labs(title="Relationship Log Officers vs. NumHomicides/Population")
+```
+```{r}
+library(PerformanceAnalytics)
+```
+# SubSelecting Numerical Variables
+```{r}
+cols <- c("Population", "AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6", "NumDrugUsers", "LawEnforcementOfficers", "RealGDPperCapita", "GiniIndex", "SeriousMentalIllness", "UnenemploymentRate", "ViolentCrime", "PropertyCrime", "SubAbuseInpatientCareBeds", "NumHomicides")
+temp <- df[cols]
+```
+
+# Converting to Pop Ratios
+```{r}
+# All except Gini, GDP
+cols <- c("NumDrugUsers", "LawEnforcementOfficers", "SeriousMentalIllness", "ViolentCrime", "PropertyCrime", "SubAbuseInpatientCareBeds", "NumHomicides")
+
+# convert to Pop estimate
+temp[cols] <- temp[cols] / temp[["Population"]]
+
+# Convert to logs
+cols <- c("AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6")
+temp[cols] <- log(temp[cols])
+```
+
+
+# Look at Corr with Numerical Variables: Guns
+```{r}
+cols <- c("AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6", "NumHomicides")
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Crimes & LEO
+```{r}
+cols <- c("LawEnforcementOfficers", "ViolentCrime", "PropertyCrime", "NumHomicides")
+
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Economic
+```{r}
+cols <- c( "RealGDPperCapita", "GiniIndex", "UnenemploymentRate", "NumHomicides")
+
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Mental & Substance
+```{r}
+cols <- c("NumDrugUsers", "SeriousMentalIllness", "SubAbuseInpatientCareBeds", "NumHomicides")
+
+chart.Correlation(temp[cols])
+```
