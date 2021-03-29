@@ -2,8 +2,12 @@
 title: "R Notebook"
 author: "Jesid"
 date: "`r format(Sys.time(), '%Y-%m-%d')`"
-output: html_notebook
+output: github_document
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 
 ```{r}
@@ -250,8 +254,10 @@ library(lme4)
 
 re1 <- lmer(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
             GiniIndex + UnemploymentRate + log(RealGDP) + Year  + log(LawEnforcementOfficers) +
-            PermitAllFirearms + ReportAllFirearms + GunRegistration + (1| State), data=data, REML = F)
+            PermitAllFirearms + ReportAllFirearms + GunRegistration + CannabisRecreational + CannabisMedical
+            + (1| State), data=data, REML = F)
 stargazer::stargazer(lm1, lm2, re1, type="text", single.row = T)
+summary(re1)
 as.data.frame(ranef(re1))
 ```
 
@@ -260,6 +266,25 @@ as.data.frame(ranef(re1))
 library(DHARMa)
 simulationOutput <- simulateResiduals(fittedModel = re1, plot = F)
 plot(simulationOutput)
-vif(re1)
 ```
+```{r}
+# Normality - Failing
+shapiro.test(residuals(re1))
+
+# Homoskedasticity - Failing
+bartlett.test(list(residuals(re1), fitted(re1)))
+
+# Multicollinearity - Failing
+vif(re1)
+
+# Independence
+acf(residuals(re1))
+```
+# Notes
+- Not sure if autocorrelation is what could be causing high multicollinearity in Year, alcoholusers, and Unemployment
+- Residuals also appear to be slanted and wide -5 to 3.8
+- Look into creating lags for lawenforcement & laws
+- Try Next:
+    - stacked level of gun laws, marijuana laws
+    - glmer
 
