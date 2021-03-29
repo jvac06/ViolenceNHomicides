@@ -43,6 +43,11 @@ colSums(is.na(df))
 str(df)
 ```
 
+##Dropping Columbia from the Model
+```{r}
+df<-df[ which(df$State!="DISTRICT OF COLUMBIA"), ]
+```
+
 ##Converting to factor and releveling
 ```{r}
 df$GunLawRank<-as.factor(df$GunLawRank)
@@ -50,6 +55,7 @@ df$StateCode<-as.factor(df$StateCode)
 df$State<-as.factor(df$State)
 df$CannabisMedical<-as.factor(df$CannabisMedical)
 df$CannabisRecreational<-as.factor(df$CannabisRecreational)
+df$Region<-as.factor(df$Region)
 ```
 
 ```{r}
@@ -72,12 +78,51 @@ df$GDP<-df$RealGDPperCapita/1000
 df$MentalIllness<-(df$SeriousMentalIllness/df$Population)*1000
 summary(df$MentalIllness)
 ```
+##Creating data sets for individual years
+```{r}
+Y19<-df %>%
+  filter(Year=="2019")
+
+Y18<-df %>%
+  filter(Year=="2018")
+
+Y17<-df %>%
+  filter(Year=="2017")
+
+Y16<-df %>%
+  filter(Year=="2016")
+
+Y15<-df %>%
+  filter(Year=="2015")
+
+Y14<-df %>%
+  filter(Year=="2014")
+
+Y13<-df %>%
+  filter(Year=="2013")
+
+Y12<-df %>%
+  filter(Year=="2012")
+
+Y11<-df %>%
+  filter(Year=="2011")
+
+Y10<-df %>%
+  filter(Year=="2010")
+
+```
 
 ```{r}
 df %>%
   group_by(GunLawRank) %>%
   ggplot()+
   geom_boxplot(aes(x=GunLawRank,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+
+df %>%
+  group_by(Region) %>%
+  ggplot()+
+  geom_boxplot(aes(x=Region,y=HomicideRate,fill="coral"))+
   guides(fill=FALSE)
 
 df %>%
@@ -125,6 +170,7 @@ ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
 
 ggplot(df, aes(x=Year, y=HomicideRate)) +
   geom_point() +
+  geom_smooth()+
   labs(title="Relationship Log Beds vs. NumHomicides/Population")
 
 
@@ -139,26 +185,23 @@ df2 %>%
     geom_line( color="grey") +
     theme_ipsum() +
     ggtitle("Trend in Average Homicide Rates")
-
 ```
 
 ```{r}
-ggplot(df, aes(x=df$HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
+ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
 
-ggplot(df, aes(x=log(df$HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
-```
-##Dropping Columbia from the Model
-```{r}
-df<-df[ which(df$State!="District of Columbia"), ]
+ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
 ```
 
+
 ```{r}
-reg1<-lm(formula = HomicideRate~df$MentalIllness+df$GDP+df$LawOfficers+df$LawCover+df$AlcoholUsers+df$DrugUsers+df$`Big Cities`+df$Education+df$GunLawRank+df$Black+df$GiniIndex+State+Year,data = df)
+dff<-df[ complete.cases(df),]
+reg1<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year,data = dff,na.action = na.exclude)
 summary(reg1)
 
 
 #Checking for linearity
-plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
+plot(reg1$fitted.values,dff$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
 abline(0,1,col="red3",lwd=3)
 
 #checking for normality
@@ -166,7 +209,7 @@ qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
 qqline(reg1$residuals,lwd=3,col="red3")
 
 #Checking for equality of variances
-plot(df3$pricesold,rstandard(reg1),pch=20,main="Equality of Variances")
+plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
 abline(0,0,col="red",lwd=3)
 
 #Checking for leverage points
@@ -175,6 +218,21 @@ plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
 abline(3*mean(lev),0,col="red",lwd=3)
 
 ```
+
 ```{r}
 colSums(is.na(df))
+which(df$HomicideRate<1)
+```
+
+```{r}
+reg2<-lmer(formula = HomicideRate~df$MentalIllness+df$GDP+df$LawOfficers+df$LawCover+df$AlcoholUsers+df$DrugUsers+df$`Big Cities`+df$Education+df$GunLawRank+df$Black+df$GiniIndex+(1|State)+Year,data = df)
+summary(reg2)
+
+AIC(reg1)
+AIC(reg2)
+```
+
+```{r}
+reg3<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year,data = Y18,na.action = na.exclude)
+summary(reg3)
 ```
