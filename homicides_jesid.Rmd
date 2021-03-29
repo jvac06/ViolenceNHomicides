@@ -1,0 +1,265 @@
+---
+title: "R Notebook"
+author: "Jesid"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: html_notebook
+---
+
+
+```{r}
+library(here)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+# Read Data
+```{r}
+df <- read_excel(here("data", "HomicideData_Original.xlsx"), sheet="HomicideData")
+colSums(is.na(df))
+```
+
+# Distribution of DV: All Years All States
+```{r}
+ggplot(data=df, aes(x=(NumHomicides/Population) *100000)) +
+  geom_histogram(aes(y=..density..), col='black', fill='white') +
+  geom_density(alpha=.6, fill="pink") +
+  labs(title = "Distribution of Homicides: All States & Years")
+```
+
+```{r}
+# library
+library(ggridges)
+# library(viridis)
+# library(hrbrthemes)
+```
+
+
+# Distributions by Years
+```{r}
+
+# Plot
+ggplot(df, aes(x = (NumHomicides/Population) *100000, y = Year, group= Year, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  labs(title = 'Homicide Distribution by Years') 
+```
+
+# Distributions by State
+```{r}
+temp <- df %>% filter(State != "DISTRICT OF COLUMBIA")
+# Plot
+ggplot(temp, aes(x = (NumHomicides/Population) *100000, y = State, group= State, fill = factor(stat(quantile)))) +
+  stat_density_ridges(
+    geom = "density_ridges_gradient",
+    calc_ecdf = TRUE,
+    quantiles = c(0.025, 0.975)
+  ) +
+  scale_fill_manual(
+    name = "Probability", values = c("#FF0000A0", "#A0A0A0A0", "#0000FFA0"),
+    labels = c("(0, 0.025]", "(0.025, 0.975]", "(0.975, 1]")
+  ) +
+  labs(title = 'Homicide Distribution by State') 
+
+```
+California as Middle
+Low: Idaho, Hawaii, Maine, Iowa, Massachusetts, etc
+High: Maryland, Michigan, Missouri, Tennessee, South Carolina, Louisiana 
+
+
+# Distribution: Cannabis Medical 
+```{r}
+df$CannabisMedical <- factor(df$CannabisMedical, levels = c(0,1), labels = c("No", "Yes"))
+
+ggplot(data=df, aes(x=log(NumHomicides), group = CannabisMedical, fill = CannabisMedical)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicides: All by Medical Cannabis")
+```
+
+```{r}
+df$CannabisRecreational <- factor(df$CannabisRecreational, levels = c(0,1), labels = c("No", "Yes"))
+
+ggplot(data=df, aes(x=log(NumHomicides), group= CannabisRecreational, fill = CannabisRecreational)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicides: All by Cannabis Legal")
+```
+
+# Beds vs Number of Homicides
+```{r}
+temp <- df %>% filter(!is.na(SubAbuseInpatientCareBeds))
+
+ggplot(temp, aes(x=log(SubAbuseInpatientCareBeds), y=(NumHomicides/Population) *100000, col=round(Population,-4))) +
+  geom_point() +
+  geom_smooth() +
+  labs(title="Relationship Log Beds vs. NumHomicides/Population")
+  
+```
+
+# Law Enforcement Officers
+```{r}
+ggplot(df, aes(x=log(LawEnforcementOfficers), y=(NumHomicides/Population) *100000, col=round(Population,-4))) +
+  geom_point(na.rm = T) +
+  geom_smooth(na.rm = T) +
+  labs(title="Relationship Log Officers vs. NumHomicides/Population")
+```
+```{r}
+library(PerformanceAnalytics)
+```
+# SubSelecting Numerical Variables
+```{r}
+cols <- c("Population", "AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6", "NumDrugUsers", "NumAlcoholUsers", "LawEnforcementOfficers", "RealGDP", "RealGDPperCapita", "GiniIndex", "SeriousMentalIllness", "UnenemploymentRate", "RapeVC","RobberyVC", "AggravatedAssaultVC", "PropertyCrime", "SubAbuseInpatientCareBeds", "NumHomicides")
+temp <- df[cols]
+```
+
+# Converting to Pop Ratios
+```{r}
+# All except Gini, GDP
+cols <- c("NumDrugUsers", "LawEnforcementOfficers", "SeriousMentalIllness", "RapeVC","RobberyVC",
+          "AggravatedAssaultVC", "PropertyCrime", "SubAbuseInpatientCareBeds", "NumHomicides")
+
+unit_of_people <- 100000
+
+# convert to Pop estimate
+temp[cols] <- (temp[cols] / temp[["Population"]]) * unit_of_people
+
+# Convert to logs
+cols <- c("AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6", "RealGDP", "Population")
+temp[cols] <- log(temp[cols])
+
+# Create logNumber of Homicides
+temp$LogNumHomicides <- log(temp$NumHomicides)
+```
+
+
+# Look at Corr with Numerical Variables: Guns
+```{r}
+cols <- c("AnyOtherWeapon1", "Machinegun3", "ShortBarreledRifle5", "ShortBarreledShotgun6", "LogNumHomicides")
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Crimes & LEO
+```{r}
+cols <- c("LawEnforcementOfficers", "RapeVC","RobberyVC","AggravatedAssaultVC", 
+          "PropertyCrime", "LogNumHomicides")
+
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Economic
+```{r}
+cols <- c("Population", "RealGDP","RealGDPperCapita", "GiniIndex", "UnenemploymentRate", "LogNumHomicides")
+
+chart.Correlation(temp[cols])
+```
+
+# Look at Corr with Numerical Variables: Mental & Substance
+```{r}
+cols <- c("NumAlcoholUsers", "NumDrugUsers", "SeriousMentalIllness", "SubAbuseInpatientCareBeds", "LogNumHomicides")
+
+chart.Correlation(temp[cols])
+```
+# Preparing Data for Modeling
+```{r}
+# Removing DC - not a state
+df <- df %>% filter(StateCode !="DC")
+# Grouping Firearms
+df <- df %>% mutate(Firearms = AnyOtherWeapon1 + Machinegun3 + ShortBarreledRifle5 + ShortBarreledShotgun6)
+# Grouping Violent Crime Except Murder
+df <- df %>% mutate(VCNotMurder = RapeVC + AggravatedAssaultVC + RobberyVC)
+# Selecting data of interest for modeling
+data <- df %>% select(Year, State, NumHomicides, Firearms, NumDrugUsers, NumAlcoholUsers, SeriousMentalIllness,
+                      Population, RealGDP, GiniIndex, UnenemploymentRate, LawEnforcementOfficers, 
+                      CannabisMedical, CannabisRecreational, SubAbuseInpatientCareBeds,
+                      VCNotMurder,PropertyCrime,
+                      PermitAllFirearms, reportall, defactoreg
+                      )
+# Rename Variables in Data
+data <- data %>% rename(ViolentCrime = VCNotMurder, BedsForAbuse = SubAbuseInpatientCareBeds,
+                        UnemploymentRate = UnenemploymentRate,
+                        ReportAllFirearms = reportall, GunRegistration = defactoreg)
+# Checking data
+colSums(is.na(data))
+```
+
+## Creating New Variable Transformation
+```{r}
+# Factorize
+cols <- c("PermitAllFirearms", "ReportAllFirearms", "GunRegistration")
+for (col in cols){
+  data[[col]] <- factor(data[[col]], levels = c(0,1), labels = c("No", "Yes"))  
+}
+
+# Year to Factor  
+data$Year <- relevel(factor(data$Year), "2010")
+
+
+# convert to Pop estimate - all except laws, gini, and unemployment rate
+unit_of_people <- 100000
+# cols
+cols <- c("NumDrugUsers",  "NumAlcoholUsers", "LawEnforcementOfficers", "SeriousMentalIllness", "ViolentCrime", 
+          "PropertyCrime", "BedsForAbuse", "NumHomicides", "RealGDP", "Firearms")
+data[cols] <- (data[cols] / data[["Population"]]) * unit_of_people
+```
+
+
+# Modeling
+## Fixed Effects - Causes
+```{r}
+# base model - only causes
+lm1 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + Year, data=data, family = gaussian(link = "identity"))
+
+plot(lm1, which = c(1,2))
+# Normality
+shapiro.test(lm1$res)
+# Homoskedasticity
+bartlett.test(list(lm1$res, lm1$fit))
+library(car)
+vif(lm1)
+library(lmtest)
+dwtest(lm1)
+stargazer::stargazer(lm1, type="text", single.row = T)
+```
+## Fixed Effects - Causes & Interventions(LE & AbuseBeds)
+```{r}
+# base model - only causes
+lm2 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+           GiniIndex + UnemploymentRate + log(RealGDP) + Year + log(LawEnforcementOfficers), 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm2, which = c(1,2))
+# Normality
+shapiro.test(lm2$res)
+# Homoskedasticity
+bartlett.test(list(lm2$res, lm2$fit))
+library(car)
+vif(lm2)
+library(lmtest)
+dwtest(lm2)
+stargazer::stargazer(lm1, lm2, type="text", single.row = T)
+```
+## Model with Multilevels - Causes & Interventions
+```{r}
+library(lme4)
+
+re1 <- lmer(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + Year  + log(LawEnforcementOfficers) +
+            PermitAllFirearms + ReportAllFirearms + GunRegistration + (1| State), data=data, REML = F)
+stargazer::stargazer(lm1, lm2, re1, type="text", single.row = T)
+as.data.frame(ranef(re1))
+```
+
+## Assumption Checking LMM
+```{r}
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = re1, plot = F)
+plot(simulationOutput)
+vif(re1)
+```
+
