@@ -281,9 +281,13 @@ vif(re1)
 acf(residuals(re1))
 ```
 # Notes
+
 - Not sure if autocorrelation is what could be causing high multicollinearity in Year, alcoholusers, and Unemployment
+
 - Residuals also appear to be slanted and wide -5 to 3.8
+
 - Look into creating lags for lawenforcement & laws
+
 - Try Next:
     - stacked level of gun laws, marijuana laws
     - glmer
