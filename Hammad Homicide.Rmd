@@ -7,8 +7,8 @@ output: rmarkdown::github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##Updating Libraries
-```{r echo=T, results='hide'}
+## Updating Libraries
+```{r echo=T, results='hide',message=FALSE,warning=FALSE}
 library(rio)
 library(formattable)
 library(dplyr)
@@ -29,26 +29,29 @@ library(lme4)
 library(MuMIn)
 library("ggridges")
 library("hrbrthemes")
+library(ggthemes)
+library("maps")
+library("mapproj")
 options(scipen = 999)
 ```
 
-##Importing Data
+## Importing Data
 ```{r}
 df<-read_xlsx("data/HomicideData_Hammad.xlsx",sheet = "HomicideData")
 ```
 
-##Checking for nulls
+## Checking for nulls
 ```{r}
 colSums(is.na(df))
 str(df)
 ```
 
-##Dropping Columbia from the Model
+## Dropping Columbia from the Model
 ```{r}
 df<-df[ which(df$State!="DISTRICT OF COLUMBIA"), ]
 ```
 
-##Converting to factor and releveling
+## Converting to factor and releveling
 ```{r}
 df$GunLawRank<-as.factor(df$GunLawRank)
 df$StateCode<-as.factor(df$StateCode)
@@ -62,13 +65,13 @@ df$Region<-as.factor(df$Region)
 summary(df)
 ```
 
-##Calculating Homicide Rate
+## Calculating Homicide Rate
 ```{r}
 df$HomicideRate<-(df$NumHomicides/df$Population)*100000
 glimpse(df)
 ```
 
-##Scaling all numerical variables according to population for easier interpretation
+## Scaling all numerical variables according to population for easier interpretation
 ```{r}
 df$DrugUsers<-(df$NumDrugUsers/df$Population)*1000
 df$AlcoholUsers<-(df$NumAlcoholUsers/df$Population)*1000
@@ -78,7 +81,7 @@ df$GDP<-df$RealGDPperCapita/1000
 df$MentalIllness<-(df$SeriousMentalIllness/df$Population)*1000
 summary(df$MentalIllness)
 ```
-##Creating data sets for individual years
+## Creating data sets for individual years
 ```{r}
 Y19<-df %>%
   filter(Year=="2019")
@@ -112,6 +115,58 @@ Y10<-df %>%
 
 ```
 
+## Creating values for Mapping
+```{r}
+US <- map_data("state")
+US$region<-toupper(US$region)
+US$State<-US$region
+head(US)
+
+temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
+
+```
+
+## Pattern of Homicide Rate with Gun Laws Rank
+```{r}
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat,
+                           group = group, fill = GunLawRank))
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+p2 <- p1 + scale_fill_calc() +
+    labs(title = "Gun Laws Rank through the years", fill = NULL)
+p3<-p2 + theme_map()
+p4<-p3+facet_wrap(temp$Year)
+p4+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
+  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+```
+
+```{r}
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = HomicideRate))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
+        labs(title = "Homicide Rate through the years") 
+p3<-p2 + theme_map()+facet_wrap(temp$Year)
+p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
+  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+```
+
+
+## Exploratory Data Analysis
+```{r}
+temp<-df[ which(df$Year>2011), ]
+ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicide Rate by Gun Laws Rank")+
+  facet_wrap(~GunLawRank)+
+  theme_bw()+
+  scale_fill_calc()
+```
+
 ```{r}
 df %>%
   group_by(GunLawRank) %>%
@@ -123,6 +178,12 @@ df %>%
   group_by(Region) %>%
   ggplot()+
   geom_boxplot(aes(x=Region,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+
+df %>%
+  group_by(StateCode) %>%
+  ggplot()+
+  geom_boxplot(aes(x=StateCode,y=HomicideRate,fill="coral"))+
   guides(fill=FALSE)
 
 df %>%
@@ -195,22 +256,22 @@ ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagree
 
 
 ```{r}
-dff<-df[ complete.cases(df),]
-reg1<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year,data = dff,na.action = na.exclude)
-summary(reg1)
+reg1<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+TotalWeapons,data = df)
 
+summary(reg1)
+plot(reg1)
 
 #Checking for linearity
-plot(reg1$fitted.values,dff$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
-abline(0,1,col="red3",lwd=3)
+#plot(reg1$fitted.values,dff$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
+#abline(0,1,col="red3",lwd=3)
 
 #checking for normality
 qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
 qqline(reg1$residuals,lwd=3,col="red3")
 
 #Checking for equality of variances
-plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
-abline(0,0,col="red",lwd=3)
+#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
+#abline(0,0,col="red",lwd=3)
 
 #Checking for leverage points
 lev=hat(model.matrix(reg1))
@@ -225,7 +286,7 @@ which(df$HomicideRate<1)
 ```
 
 ```{r}
-reg2<-lmer(formula = HomicideRate~df$MentalIllness+df$GDP+df$LawOfficers+df$LawCover+df$AlcoholUsers+df$DrugUsers+df$`Big Cities`+df$Education+df$GunLawRank+df$Black+df$GiniIndex+(1|State)+Year,data = df)
+reg2<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+Education+GunLawRank+Black+GiniIndex+(1|State)+Year+UnenemploymentRate,data = df)
 summary(reg2)
 
 AIC(reg1)
@@ -233,6 +294,6 @@ AIC(reg2)
 ```
 
 ```{r}
-reg3<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year,data = Y18,na.action = na.exclude)
+reg3<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+Region,data = Y18,na.action = na.exclude)
 summary(reg3)
 ```
