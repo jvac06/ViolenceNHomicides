@@ -27,6 +27,7 @@ library("hrbrthemes")
 library(ggthemes)
 library("maps")
 library("mapproj")
+library(cowplot)
 options(scipen = 999)
 ```
 
@@ -608,20 +609,25 @@ df2 %>%
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-11.png)<!-- -->
 
 ``` r
-ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
+knitr::opts_chunk$set(echo = TRUE,fig.width = 10,fig.height = 5)
 ```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
-ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
+x1<-ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
+
+x2<-ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
+
+cowplot::plot_grid(x1, x2)
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+``` r
+knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.8)
+```
 
 ``` r
 reg1<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+TotalWeapons,data = df)
@@ -691,7 +697,7 @@ summary(reg1)
 plot(reg1)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-4.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-4.png)<!-- -->
 
 ``` r
 #Checking for linearity
@@ -703,7 +709,7 @@ qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
 qqline(reg1$residuals,lwd=3,col="red3")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-5.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-5.png)<!-- -->
 
 ``` r
 #Checking for equality of variances
@@ -716,7 +722,7 @@ plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
 abline(3*mean(lev),0,col="red",lwd=3)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-6.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-6.png)<!-- -->
 
 ``` r
 colSums(is.na(df))
