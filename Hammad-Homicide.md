@@ -377,7 +377,6 @@ temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
 ## Pattern of Homicide Rate with Gun Laws Rank
 
 ``` r
-knitr::opts_chunk$set(echo= TRUE,fig.width = 12,fig.height = 12)
 p0 <- ggplot(data = temp,
              mapping = aes(x = long, y = lat,
                            group = group, fill = GunLawRank))
@@ -386,7 +385,9 @@ p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
 p2 <- p1 + scale_fill_calc() +
     labs(title = "Gun Laws Rank through the years", fill = NULL)
 p3<-p2 + theme_map()
-p3+facet_wrap(temp$Year, ncol = 2)
+p4<-p3+facet_wrap(temp$Year)
+p4+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
+  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
 ```
 
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
