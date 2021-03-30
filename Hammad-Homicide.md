@@ -377,6 +377,7 @@ temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
 ## Pattern of Homicide Rate with Gun Laws Rank
 
 ``` r
+knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
 p0 <- ggplot(data = temp,
              mapping = aes(x = long, y = lat,
                            group = group, fill = GunLawRank))
@@ -386,8 +387,8 @@ p2 <- p1 + scale_fill_calc() +
     labs(title = "Gun Laws Rank through the years", fill = NULL)
 p3<-p2 + theme_map()
 p4<-p3+facet_wrap(temp$Year)
-p4+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
-  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
+  legend.key.width = unit(0.5,"cm"),legend.margin =margin(r=30,l=10,t=1,b=1)  )
 ```
 
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
@@ -408,81 +409,6 @@ p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.tit
 
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-## Exploratory Data Analysis
-
-``` r
-temp<-df[ which(df$Year>2011), ]
-ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
-  geom_density(alpha=.6, na.rm=T) +
-  labs(title = "Distribution of Homicide Rate by Gun Laws Rank")+
-  facet_wrap(~GunLawRank)+
-  theme_bw()+
-  scale_fill_calc()
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-
-``` r
-df %>%
-  group_by(GunLawRank) %>%
-  ggplot()+
-  geom_boxplot(aes(x=GunLawRank,y=HomicideRate,fill="coral"))+
-  guides(fill=FALSE)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
-
-``` r
-df %>%
-  group_by(Region) %>%
-  ggplot()+
-  geom_boxplot(aes(x=Region,y=HomicideRate,fill="coral"))+
-  guides(fill=FALSE)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
-
-``` r
-df %>%
-  group_by(StateCode) %>%
-  ggplot()+
-  geom_boxplot(aes(x=StateCode,y=HomicideRate,fill="coral"))+
-  guides(fill=FALSE)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
-
-``` r
-df %>%
-  group_by(CannabisMedical) %>%
-  ggplot()+
-  geom_boxplot(aes(x=CannabisMedical,y=HomicideRate,fill="coral"))+
-  guides(fill=FALSE)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
-
-``` r
-df %>%
-  group_by(CannabisRecreational) %>%
-  ggplot()+
-  geom_boxplot(aes(x=CannabisRecreational,y=HomicideRate,fill="coral"))+
-  guides(fill=FALSE)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-5.png)<!-- -->
-
-``` r
-ggplot(data=df, aes(x=HomicideRate)) +
-  geom_histogram(aes(y=..density..), col='black', fill='white') +
-  geom_density(alpha=.6, fill="seagreen") +
-  labs(title = "Distribution of Homicides: All States & Years")
-```
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-6.png)<!-- -->
-
 ``` r
 ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(quantile)))) +
   stat_density_ridges(
@@ -499,7 +425,83 @@ ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(qua
 
     ## Picking joint bandwidth of 0.423
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-7.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+## Exploratory Data Analysis
+
+``` r
+knitr::opts_chunk$set(echo = TRUE,fig.width = 8.5,fig.height = 6)
+temp<-df[ which(df$Year>2011), ]
+ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
+  geom_density(alpha=.6, na.rm=T) +
+  labs(title = "Distribution of Homicide Rate by Gun Laws Rank")+
+  facet_wrap(~GunLawRank)+
+  theme_bw()+
+  scale_fill_calc()
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
+df %>%
+  group_by(GunLawRank) %>%
+  ggplot()+
+  geom_boxplot(aes(x=GunLawRank,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+``` r
+df %>%
+  group_by(Region) %>%
+  ggplot()+
+  geom_boxplot(aes(x=Region,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
+
+``` r
+df %>%
+  group_by(StateCode) %>%
+  ggplot()+
+  geom_boxplot(aes(x=StateCode,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
+
+``` r
+df %>%
+  group_by(CannabisMedical) %>%
+  ggplot()+
+  geom_boxplot(aes(x=CannabisMedical,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
+
+``` r
+df %>%
+  group_by(CannabisRecreational) %>%
+  ggplot()+
+  geom_boxplot(aes(x=CannabisRecreational,y=HomicideRate,fill="coral"))+
+  guides(fill=FALSE)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-5.png)<!-- -->
+
+``` r
+ggplot(data=df, aes(x=HomicideRate)) +
+  geom_histogram(aes(y=..density..), col='black', fill='white') +
+  geom_density(alpha=.6, fill="seagreen") +
+  labs(title = "Distribution of Homicides: All States & Years")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-6.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = CannabisMedical, fill = CannabisMedical)) +
@@ -507,7 +509,7 @@ ggplot(data=df, aes(x=HomicideRate, group = CannabisMedical, fill = CannabisMedi
   labs(title = "Distribution of Homicides: All by Medical Cannabis")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-8.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-7.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = CannabisRecreational, fill = CannabisRecreational)) +
@@ -515,7 +517,7 @@ ggplot(data=df, aes(x=HomicideRate, group = CannabisRecreational, fill = Cannabi
   labs(title = "Distribution of Homicide Rate by Recreational Cannabis")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-9.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-8.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
@@ -523,7 +525,7 @@ ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
   labs(title = "Distribution of Homicide Rate by Gun Laws Rank")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-10.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-9.png)<!-- -->
 
 ``` r
 ggplot(df, aes(x=Year, y=HomicideRate)) +
@@ -534,7 +536,7 @@ ggplot(df, aes(x=Year, y=HomicideRate)) +
 
     ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-11.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-10.png)<!-- -->
 
 ``` r
 df2<-df %>% 
@@ -597,7 +599,7 @@ df2 %>%
     ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
     ## font family not found in Windows font database
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-12.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-11.png)<!-- -->
 
 ``` r
 ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
@@ -605,7 +607,7 @@ ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+g
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Log Homicide Rate")+xlab("Log of Homicide Rate")
@@ -613,7 +615,7 @@ ggplot(df, aes(x=log(HomicideRate))) + geom_histogram(color="gold",fill="seagree
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
 
 ``` r
 reg1<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+TotalWeapons,data = df)
@@ -683,7 +685,7 @@ summary(reg1)
 plot(reg1)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-4.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-4.png)<!-- -->
 
 ``` r
 #Checking for linearity
@@ -695,7 +697,7 @@ qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
 qqline(reg1$residuals,lwd=3,col="red3")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-5.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-5.png)<!-- -->
 
 ``` r
 #Checking for equality of variances
@@ -708,7 +710,7 @@ plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
 abline(3*mean(lev),0,col="red",lwd=3)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-6.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-6.png)<!-- -->
 
 ``` r
 colSums(is.na(df))

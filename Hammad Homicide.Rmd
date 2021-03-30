@@ -138,8 +138,8 @@ p2 <- p1 + scale_fill_calc() +
     labs(title = "Gun Laws Rank through the years", fill = NULL)
 p3<-p2 + theme_map()
 p4<-p3+facet_wrap(temp$Year)
-p4+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
-  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
+  legend.key.width = unit(0.5,"cm"),legend.margin =margin(r=30,l=10,t=1,b=1)  )
 ```
 
 ```{r}
@@ -171,7 +171,7 @@ ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(qua
 
 ## Exploratory Data Analysis
 ```{r}
-knitr::opts_chunk$set(echo T= TRUE,fig.width = 8.5,fig.height = 6)
+knitr::opts_chunk$set(echo = TRUE,fig.width = 8.5,fig.height = 6)
 temp<-df[ which(df$Year>2011), ]
 ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
   geom_density(alpha=.6, na.rm=T) +
