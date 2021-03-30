@@ -125,10 +125,12 @@ head(US)
 temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
 
 ```
+```{r}
+knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
+```
 
 ## Pattern of Homicide Rate with Gun Laws Rank
 ```{r}
-knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
 p0 <- ggplot(data = temp,
              mapping = aes(x = long, y = lat,
                            group = group, fill = GunLawRank))
@@ -169,9 +171,12 @@ ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(qua
   labs(title = 'Homicide Distribution by State') 
 ```
 
+```{r}
+knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.8)
+```
+
 ## Exploratory Data Analysis
 ```{r}
-knitr::opts_chunk$set(echo = TRUE,fig.width = 8.5,fig.height = 6)
 temp<-df[ which(df$Year>2011), ]
 ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
   geom_density(alpha=.6, na.rm=T) +
