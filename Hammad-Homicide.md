@@ -68,7 +68,7 @@ colSums(is.na(df))
     ##           CannabisMedical      CannabisRecreational 
     ##                         0                         0 
     ##                GunLawRank                     Black 
-    ##                       110                         0 
+    ##                         8                         0 
     ##                  Hispanic                      Area 
     ##                         0                         0 
     ##              Adults 19-25              Adults 26-34 
@@ -88,13 +88,15 @@ colSums(is.na(df))
     ##                 RobberyVC       AggravatedAssaultVC 
     ##                        10                        10 
     ##         ViolentCrime...39        PropertyCrime...40 
-    ##                         0                         0
+    ##                         0                         0 
+    ##          GunLawStrictness 
+    ##                       110
 
 ``` r
 str(df)
 ```
 
-    ## tibble [510 x 40] (S3: tbl_df/tbl/data.frame)
+    ## tibble [510 x 41] (S3: tbl_df/tbl/data.frame)
     ##  $ State                    : chr [1:510] "ALABAMA" "ALASKA" "ARIZONA" "ARKANSAS" ...
     ##  $ StateCode                : chr [1:510] "AL" "AK" "AZ" "AR" ...
     ##  $ Year                     : num [1:510] 2019 2019 2019 2019 2019 ...
@@ -135,6 +137,7 @@ str(df)
     ##  $ AggravatedAssaultVC      : num [1:510] 18679 4360 22704 13513 105541 ...
     ##  $ ViolentCrime...39        : num [1:510] 25046 6343 33141 17643 174331 ...
     ##  $ PropertyCrime...40       : num [1:510] 131133 21294 177638 86250 921114 ...
+    ##  $ GunLawStrictness         : num [1:510] 5 5 5 5 1 3 1 2 NA 3 ...
 
 ## Dropping Columbia from the Model
 
@@ -153,107 +156,6 @@ df$CannabisRecreational<-as.factor(df$CannabisRecreational)
 df$Region<-as.factor(df$Region)
 ```
 
-``` r
-summary(df)
-```
-
-    ##         State       StateCode        Year       NumHomicides   
-    ##  ALABAMA   : 10   AK     : 10   Min.   :2010   Min.   :   7.0  
-    ##  ALASKA    : 10   AL     : 10   1st Qu.:2012   1st Qu.:  56.0  
-    ##  ARIZONA   : 10   AR     : 10   Median :2014   Median : 178.5  
-    ##  ARKANSAS  : 10   AZ     : 10   Mean   :2014   Mean   : 314.9  
-    ##  CALIFORNIA: 10   CA     : 10   3rd Qu.:2017   3rd Qu.: 467.2  
-    ##  COLORADO  : 10   CO     : 10   Max.   :2019   Max.   :2047.0  
-    ##  (Other)   :440   (Other):440                                  
-    ##   NumDrugUsers     NumAlcoholUsers   LawEnforcementOfficers
-    ##  Min.   :   8169   Min.   :  16000   Min.   :  353         
-    ##  1st Qu.:  40000   1st Qu.:  74000   1st Qu.: 2884         
-    ##  Median : 101500   Median : 175000   Median : 7818         
-    ##  Mean   : 143087   Mean   : 277591   Mean   :12784         
-    ##  3rd Qu.: 173750   3rd Qu.: 339250   3rd Qu.:16039         
-    ##  Max.   :1204000   Max.   :2789003   Max.   :79616         
-    ##  NA's   :50                          NA's   :2             
-    ##    Population          RealGDP              RealGDPperCapita
-    ##  Min.   :  548400   Min.   :  27662992126   Min.   :33921   
-    ##  1st Qu.: 1782150   1st Qu.:  78530426417   1st Qu.:44976   
-    ##  Median : 4360350   Median : 199529848021   Median :51296   
-    ##  Mean   : 6205472   Mean   : 337220037316   Mean   :52589   
-    ##  3rd Qu.: 7027725   3rd Qu.: 435509529331   3rd Qu.:58469   
-    ##  Max.   :38745900   Max.   :2773617529880   Max.   :82983   
-    ##                                                             
-    ##    GiniIndex      SeriousMentalIllness UnenemploymentRate
-    ##  Min.   :0.4103   Min.   :  18000      Min.   : 2.200    
-    ##  1st Qu.:0.4440   1st Qu.:  67250      1st Qu.: 4.000    
-    ##  Median :0.4592   Median : 156000      Median : 5.300    
-    ##  Mean   :0.4586   Mean   : 211680      Mean   : 5.776    
-    ##  3rd Qu.:0.4729   3rd Qu.: 263500      3rd Qu.: 7.200    
-    ##  Max.   :0.5142   Max.   :1364000      Max.   :13.500    
-    ##                   NA's   :50                             
-    ##  ViolentCrime...14 PropertyCrime...15 SubAbuseInpatientCareBeds
-    ##  Min.   :   622    Min.   :   6642    Min.   :   70.0          
-    ##  1st Qu.:  5564    1st Qu.:  42017    1st Qu.:  583.2          
-    ##  Median : 16392    Median : 113644    Median : 1210.5          
-    ##  Mean   : 24529    Mean   : 158891    Mean   : 2166.3          
-    ##  3rd Qu.: 28244    3rd Qu.: 188054    3rd Qu.: 2575.5          
-    ##  Max.   :177627    Max.   :1049465    Max.   :16496.0          
-    ##                                       NA's   :150              
-    ##  CannabisMedical CannabisRecreational GunLawRank     Black      
-    ##  0:260           0:457                A   : 49   Min.   : 0.50  
-    ##  1:240           1: 43                B   : 35   1st Qu.: 2.90  
-    ##                                       C   : 63   Median : 6.90  
-    ##                                       D   : 58   Mean   :10.11  
-    ##                                       F   :195   3rd Qu.:14.20  
-    ##                                       NA's:100   Max.   :37.70  
-    ##                                                                 
-    ##     Hispanic          Area         Adults 19-25     Adults 26-34 
-    ##  Min.   : 1.00   Min.   :  1214   Min.   : 7.100   Min.   : 9.9  
-    ##  1st Qu.: 4.50   1st Qu.: 36291   1st Qu.: 8.700   1st Qu.:11.4  
-    ##  Median : 8.90   Median : 56222   Median : 9.000   Median :11.8  
-    ##  Mean   :11.43   Mean   : 72368   Mean   : 9.059   Mean   :11.9  
-    ##  3rd Qu.:13.32   3rd Qu.: 83557   3rd Qu.: 9.400   3rd Qu.:12.4  
-    ##  Max.   :49.50   Max.   :589757   Max.   :12.400   Max.   :14.5  
-    ##                                                                  
-    ##    Big Cities    Education           Region    AnyOtherWeapon1 
-    ##  Min.   :0.0   Min.   :77.70   Midwest  :120   Min.   :  34.0  
-    ##  1st Qu.:0.0   1st Qu.:84.14   NorthEast:100   1st Qu.: 439.0  
-    ##  Median :0.0   Median :86.53   SouthEast:130   Median : 837.5  
-    ##  Mean   :0.6   Mean   :86.15   SouthWest: 40   Mean   :1149.8  
-    ##  3rd Qu.:1.0   3rd Qu.:88.23   West     :110   3rd Qu.:1487.8  
-    ##  Max.   :6.0   Max.   :93.67                   Max.   :7410.0  
-    ##                NA's   :50                      NA's   :50      
-    ##  DestructiveDevice2  Machinegun3      Silencer4      ShortBarreledRifle5
-    ##  Min.   :  1433     Min.   :  377   Min.   :    26   Min.   :   50      
-    ##  1st Qu.: 12440     1st Qu.: 3828   1st Qu.:  3404   1st Qu.: 1108      
-    ##  Median : 33141     Median : 7032   Median :  9568   Median : 2355      
-    ##  Mean   : 48563     Mean   :11208   Mean   : 17787   Mean   : 4164      
-    ##  3rd Qu.: 55993     3rd Qu.:16643   3rd Qu.: 22478   3rd Qu.: 5087      
-    ##  Max.   :299766     Max.   :52965   Max.   :330806   Max.   :62504      
-    ##  NA's   :50         NA's   :50      NA's   :50       NA's   :50         
-    ##  ShortBarreledShotgun6  TotalWeapons    MurderNSlaugtherVC
-    ##  Min.   :   59.0       Min.   :  3304   Min.   :   7.0    
-    ##  1st Qu.:  768.5       1st Qu.: 27444   1st Qu.:  54.0    
-    ##  Median : 1255.5       Median : 59389   Median : 178.0    
-    ##  Mean   : 2726.3       Mean   : 84463   Mean   : 308.4    
-    ##  3rd Qu.: 2906.0       3rd Qu.:105069   3rd Qu.: 457.2    
-    ##  Max.   :14129.0       Max.   :725368   Max.   :1930.0    
-    ##  NA's   :50            NA's   :50                         
-    ##      RapeVC          RobberyVC     AggravatedAssaultVC ViolentCrime...39
-    ##  Min.   :  110.0   Min.   :   53   Min.   :   432      Min.   :   622   
-    ##  1st Qu.:  752.2   1st Qu.: 1008   1st Qu.:  3598      1st Qu.:  5564   
-    ##  Median : 1617.0   Median : 3532   Median : 10302      Median : 16392   
-    ##  Mean   : 2287.4   Mean   : 6483   Mean   : 15450      Mean   : 24529   
-    ##  3rd Qu.: 2592.8   3rd Qu.: 7209   3rd Qu.: 18683      3rd Qu.: 28244   
-    ##  Max.   :15505.0   Max.   :58116   Max.   :105541      Max.   :177627   
-    ##                                                                         
-    ##  PropertyCrime...40
-    ##  Min.   :   6642   
-    ##  1st Qu.:  42017   
-    ##  Median : 113644   
-    ##  Mean   : 158891   
-    ##  3rd Qu.: 188054   
-    ##  Max.   :1049465   
-    ## 
-
 ## Calculating Homicide Rate
 
 ``` r
@@ -262,7 +164,7 @@ glimpse(df)
 ```
 
     ## Rows: 500
-    ## Columns: 41
+    ## Columns: 42
     ## $ State                     <fct> ALABAMA, ALASKA, ARIZONA, ARKANSAS, ...
     ## $ StateCode                 <fct> AL, AK, AZ, AR, CA, CO, CT, DE, FL, ...
     ## $ Year                      <dbl> 2019, 2019, 2019, 2019, 2019, 2019, ...
@@ -303,6 +205,7 @@ glimpse(df)
     ## $ AggravatedAssaultVC       <dbl> 18679, 4360, 22704, 13513, 105541, 1...
     ## $ ViolentCrime...39         <dbl> 25046, 6343, 33141, 17643, 174331, 2...
     ## $ PropertyCrime...40        <dbl> 131133, 21294, 177638, 86250, 921114...
+    ## $ GunLawStrictness          <dbl> 5, 5, 5, 5, 1, 3, 1, 2, 3, 5, 1, 5, ...
     ## $ HomicideRate              <dbl> 2.685071, 11.115861, 5.607213, 8.656...
 
 ## Scaling all numerical variables according to population for easier interpretation
@@ -391,8 +294,26 @@ p2 <- p1 + scale_fill_calc() +
     labs(title = "Gun Laws Rank through the years", fill = NULL)
 p3<-p2 + theme_map()
 p4<-p3+facet_wrap(temp$Year)
-p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
+p5<-p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
   legend.key.width = unit(0.5,"cm"),legend.margin =margin(r=30,l=10,t=1,b=1)  )
+p5
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = HomicideRate))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
+        labs(title = "Homicide Rate through the years") 
+p3<-p2 + theme_map()+facet_wrap(temp$Year)
+p4<-p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
+  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+p4
 ```
 
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
@@ -405,10 +326,22 @@ p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
     coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
 
 p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
-        labs(title = "Homicide Rate through the years") 
-p3<-p2 + theme_map()+facet_wrap(temp$Year)
-p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
-  legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+        labs(title = "Average Homicide Rate in the last 8 years") 
+p3<-p2 + theme_map()
+p4<-p3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = GunLawStrictness))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Darkorange") +
+        labs(title = "Gun Law average strictness in last 8 years")+labs(fill="Strictness") 
+p3<-p2 + theme_map()
+p5<-p3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+cowplot::plot_grid(p4, p5)
 ```
 
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
@@ -644,54 +577,56 @@ summary(reg1)
     ## 
     ## Residuals:
     ##      Min       1Q   Median       3Q      Max 
-    ## -0.81010 -0.21559  0.01399  0.22158  1.18756 
+    ## -0.80357 -0.23156  0.01481  0.24312  1.20193 
     ## 
     ## Coefficients:
-    ##                            Estimate       Std. Error t value
-    ## (Intercept)        -299.72751372179   35.59733011735  -8.420
-    ## MentalIllness        -0.01109756145    0.00604151326  -1.837
-    ## GDP                  -0.00060301178    0.00289880029  -0.208
-    ## LawOfficers           0.01069970844    0.00413911055   2.585
-    ## LawCover             -0.00098042041    0.00051024273  -1.921
-    ## AlcoholUsers          0.00330992195    0.00153437805   2.157
-    ## DrugUsers            -0.00209085247    0.00692834109  -0.302
-    ## `Big Cities`          0.05812273274    0.02853993708   2.037
-    ## Education            -0.03818739219    0.01048315293  -3.643
-    ## GunLawRankB           0.00419255850    0.09550751914   0.044
-    ## GunLawRankC           0.16055713028    0.11104725785   1.446
-    ## GunLawRankD           0.19179994549    0.11675846378   1.643
-    ## GunLawRankF           0.22284721973    0.11666616698   1.910
-    ## Black                 0.02614365102    0.00277003006   9.438
-    ## GiniIndex            -0.21025122004    1.51758399148  -0.139
-    ## Year                  0.15062897925    0.01765022577   8.534
-    ## UnenemploymentRate    0.13515468790    0.02170130215   6.228
-    ## TotalWeapons         -0.00000003754    0.00000035044  -0.107
+    ##                           Estimate      Std. Error t value
+    ## (Intercept)        -239.1732781244   31.6241161935  -7.563
+    ## MentalIllness        -0.0047219584    0.0049913082  -0.946
+    ## GDP                   0.0000434643    0.0026603794   0.016
+    ## LawOfficers           0.0110990349    0.0039543661   2.807
+    ## LawCover             -0.0008739186    0.0004511267  -1.937
+    ## AlcoholUsers          0.0025270908    0.0014624419   1.728
+    ## DrugUsers            -0.0010258650    0.0065904336  -0.156
+    ## `Big Cities`          0.0458263707    0.0259587971   1.765
+    ## Education            -0.0483459534    0.0092404756  -5.232
+    ## GunLawRankB          -0.0057621687    0.0924486072  -0.062
+    ## GunLawRankC           0.1217242375    0.0985108022   1.236
+    ## GunLawRankD           0.1369830616    0.1019335725   1.344
+    ## GunLawRankF           0.1644412869    0.0981915203   1.675
+    ## GunLawRankX           0.1052919037    0.1475024818   0.714
+    ## Black                 0.0260707052    0.0025983850  10.033
+    ## GiniIndex             0.2037961314    1.4121541095   0.144
+    ## Year                  0.1209180744    0.0157074159   7.698
+    ## UnenemploymentRate    0.0941566977    0.0184744123   5.097
+    ## TotalWeapons          0.0000001705    0.0000003298   0.517
     ##                                Pr(>|t|)    
-    ## (Intercept)        0.000000000000001956 ***
-    ## MentalIllness                  0.067283 .  
-    ## GDP                            0.835363    
-    ## LawOfficers                    0.010241 *  
-    ## LawCover                       0.055683 .  
-    ## AlcoholUsers                   0.031840 *  
-    ## DrugUsers                      0.763041    
-    ## `Big Cities`                   0.042633 *  
-    ## Education                      0.000321 ***
-    ## GunLawRankB                    0.965017    
-    ## GunLawRankC                    0.149335    
-    ## GunLawRankD                    0.101562    
-    ## GunLawRankF                    0.057135 .  
+    ## (Intercept)           0.000000000000394 ***
+    ## MentalIllness                    0.3448    
+    ## GDP                              0.9870    
+    ## LawOfficers                      0.0053 ** 
+    ## LawCover                         0.0536 .  
+    ## AlcoholUsers                     0.0849 .  
+    ## DrugUsers                        0.8764    
+    ## `Big Cities`                     0.0784 .  
+    ## Education             0.000000298741429 ***
+    ## GunLawRankB                      0.9503    
+    ## GunLawRankC                      0.2175    
+    ## GunLawRankD                      0.1799    
+    ## GunLawRankF                      0.0949 .  
+    ## GunLawRankX                      0.4758    
     ## Black              < 0.0000000000000002 ***
-    ## GiniIndex                      0.889910    
-    ## Year               0.000000000000000896 ***
-    ## UnenemploymentRate 0.000000001717979177 ***
-    ## TotalWeapons                   0.914770    
+    ## GiniIndex                        0.8853    
+    ## Year                  0.000000000000162 ***
+    ## UnenemploymentRate    0.000000583476946 ***
+    ## TotalWeapons                     0.6054    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 0.3343 on 281 degrees of freedom
-    ##   (201 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6394, Adjusted R-squared:  0.6176 
-    ## F-statistic: 29.31 on 17 and 281 DF,  p-value: < 0.00000000000000022
+    ## Residual standard error: 0.3354 on 330 degrees of freedom
+    ##   (151 observations deleted due to missingness)
+    ## Multiple R-squared:  0.6297, Adjusted R-squared:  0.6095 
+    ## F-statistic: 31.18 on 18 and 330 DF,  p-value: < 0.00000000000000022
 
 ``` r
 plot(reg1)
@@ -747,7 +682,7 @@ colSums(is.na(df))
     ##           CannabisMedical      CannabisRecreational 
     ##                         0                         0 
     ##                GunLawRank                     Black 
-    ##                       100                         0 
+    ##                         0                         0 
     ##                  Hispanic                      Area 
     ##                         0                         0 
     ##              Adults 19-25              Adults 26-34 
@@ -768,14 +703,14 @@ colSums(is.na(df))
     ##                         0                         0 
     ##         ViolentCrime...39        PropertyCrime...40 
     ##                         0                         0 
-    ##              HomicideRate                 DrugUsers 
-    ##                         0                        50 
-    ##              AlcoholUsers               LawOfficers 
-    ##                         0                         2 
-    ##                  LawCover                       GDP 
-    ##                         2                         0 
-    ##             MentalIllness 
-    ##                        50
+    ##          GunLawStrictness              HomicideRate 
+    ##                       100                         0 
+    ##                 DrugUsers              AlcoholUsers 
+    ##                        50                         0 
+    ##               LawOfficers                  LawCover 
+    ##                         2                         2 
+    ##                       GDP             MentalIllness 
+    ##                         0                        50
 
 ``` r
 which(df$HomicideRate<1)
@@ -801,40 +736,41 @@ summary(reg2)
     ##     GunLawRank + Black + GiniIndex + (1 | State) + Year + UnenemploymentRate
     ##    Data: df
     ## 
-    ## REML criterion at convergence: 64.9
+    ## REML criterion at convergence: 50
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.0774 -0.5337  0.0302  0.5521  4.1806 
+    ## -3.1334 -0.5419  0.0154  0.5320  4.3268 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  State    (Intercept) 0.11383  0.3374  
-    ##  Residual             0.03148  0.1774  
-    ## Number of obs: 299, groups:  State, 50
+    ##  State    (Intercept) 0.11930  0.3454  
+    ##  Residual             0.03134  0.1770  
+    ## Number of obs: 349, groups:  State, 50
     ## 
     ## Fixed effects:
-    ##                        Estimate   Std. Error t value
-    ## (Intercept)        -128.7139326   26.8096288  -4.801
-    ## MentalIllness        -0.0020339    0.0048749  -0.417
-    ## GDP                  -0.0055371    0.0045912  -1.206
-    ## LawOfficers           0.0031881    0.0031717   1.005
-    ## LawCover             -0.0010258    0.0007839  -1.309
-    ## AlcoholUsers          0.0045541    0.0008680   5.247
-    ## DrugUsers             0.0029691    0.0052985   0.560
-    ## df$`Big Cities`       0.0774630    0.0501244   1.545
-    ## Education            -0.0028947    0.0108794  -0.266
-    ## GunLawRankB          -0.0301374    0.0790393  -0.381
-    ## GunLawRankC           0.1583044    0.1213419   1.305
-    ## GunLawRankD           0.1986909    0.1364582   1.456
-    ## GunLawRankF           0.1620408    0.1382407   1.172
-    ## Black                 0.0302782    0.0060695   4.989
-    ## GiniIndex             3.8367399    3.0515232   1.257
-    ## Year                  0.0635041    0.0136228   4.662
-    ## UnenemploymentRate    0.0458186    0.0176872   2.590
+    ##                       Estimate  Std. Error t value
+    ## (Intercept)        -96.2575220  23.0733229  -4.172
+    ## MentalIllness       -0.0016637   0.0039143  -0.425
+    ## GDP                 -0.0064505   0.0040818  -1.580
+    ## LawOfficers          0.0037116   0.0030356   1.223
+    ## LawCover            -0.0011727   0.0007373  -1.591
+    ## AlcoholUsers         0.0041592   0.0008261   5.035
+    ## DrugUsers            0.0031292   0.0048805   0.641
+    ## df$`Big Cities`      0.0702076   0.0506263   1.387
+    ## Education           -0.0013585   0.0099305  -0.137
+    ## GunLawRankB          0.0367695   0.0671626   0.547
+    ## GunLawRankC          0.1994800   0.0788558   2.530
+    ## GunLawRankD          0.1750678   0.0793570   2.206
+    ## GunLawRankF          0.1395672   0.0750588   1.859
+    ## GunLawRankX          0.0852228   0.0919870   0.926
+    ## Black                0.0295965   0.0061173   4.838
+    ## GiniIndex            5.5987381   2.9729483   1.883
+    ## Year                 0.0470159   0.0117972   3.985
+    ## UnenemploymentRate   0.0240449   0.0147845   1.626
 
     ## 
-    ## Correlation matrix not shown by default, as p = 17 > 12.
+    ## Correlation matrix not shown by default, as p = 18 > 12.
     ## Use print(x, correlation=TRUE)  or
     ##     vcov(x)        if you need it
 
@@ -845,13 +781,13 @@ summary(reg2)
 AIC(reg1)
 ```
 
-    ## [1] 212.663
+    ## [1] 248.4539
 
 ``` r
 AIC(reg2)
 ```
 
-    ## [1] 102.9321
+    ## [1] 90.01046
 
 ``` r
 reg3<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+Region,data = Y18,na.action = na.exclude)

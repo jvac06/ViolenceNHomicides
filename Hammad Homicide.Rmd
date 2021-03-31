@@ -62,10 +62,6 @@ df$CannabisRecreational<-as.factor(df$CannabisRecreational)
 df$Region<-as.factor(df$Region)
 ```
 
-```{r}
-summary(df)
-```
-
 ## Calculating Homicide Rate
 ```{r}
 df$HomicideRate<-(df$NumHomicides/df$Population)*100000
@@ -141,8 +137,9 @@ p2 <- p1 + scale_fill_calc() +
     labs(title = "Gun Laws Rank through the years", fill = NULL)
 p3<-p2 + theme_map()
 p4<-p3+facet_wrap(temp$Year)
-p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
+p5<-p4+theme(legend.position=c(.65, .24), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(0.5, "cm"),
   legend.key.width = unit(0.5,"cm"),legend.margin =margin(r=30,l=10,t=1,b=1)  )
+p5
 ```
 
 ```{r}
@@ -155,9 +152,37 @@ p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
 p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
         labs(title = "Homicide Rate through the years") 
 p3<-p2 + theme_map()+facet_wrap(temp$Year)
-p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
+p4<-p3+theme(legend.position=c(.65, .22), legend.direction = "horizontal",legend.title = element_text(size = 18),legend.text = element_text(size = 16),legend.key.size = unit(1, "cm"),
   legend.key.width = unit(1,"cm"),legend.margin =margin(r=30,l=30,t=10,b=1)  )
+p4
 ```
+
+```{r}
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = HomicideRate))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
+        labs(title = "Average Homicide Rate in the last 8 years") 
+p3<-p2 + theme_map()
+p4<-p3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = GunLawStrictness))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Darkorange") +
+        labs(title = "Gun Law average strictness in last 8 years")+labs(fill="Strictness") 
+p3<-p2 + theme_map()
+p5<-p3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+cowplot::plot_grid(p4, p5)
+```
+
 ```{r}
 ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(quantile)))) +
   stat_density_ridges(
