@@ -449,3 +449,7 @@ summary(reg7)
 AIC(reg7)
 vif(reg7)
 ```
+
+```{r}
+stargazer(reg5,reg6,reg7,type="text",align = TRUE,single.row=TRUE,digits=2,out = "regout.txt")
+```
