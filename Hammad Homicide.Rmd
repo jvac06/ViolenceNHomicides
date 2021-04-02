@@ -343,7 +343,7 @@ knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
 ```
 
 ```{r}
-numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education')]
+numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education','GunLawStrictness')]
 correlations=cor(numerics,use = "pairwise.complete.obs")
 corrplot(correlations,method = "number",type="upper")
 ```
@@ -441,4 +441,11 @@ AIC(reg6)
 ```{r}
 #reg7<-glmer.nb(log(HomicideRate2)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
 #AIC(reg7)
+```
+## GLMER with state random effect and numeric gun laws - No region - VIF pass
+```{r}
+reg7<-glmer(log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawStrictness+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "gaussian")
+summary(reg7)
+AIC(reg7)
+vif(reg7)
 ```

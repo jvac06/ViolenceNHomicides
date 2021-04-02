@@ -716,7 +716,7 @@ knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
 ```
 
 ``` r
-numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education')]
+numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education','GunLawStrictness')]
 correlations=cor(numerics,use = "pairwise.complete.obs")
 corrplot(correlations,method = "number",type="upper")
 ```
@@ -1219,3 +1219,87 @@ AIC(reg6)
 #reg7<-glmer.nb(log(HomicideRate2)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
 #AIC(reg7)
 ```
+
+## GLMER with state random effect and numeric gun laws - No region - VIF pass
+
+``` r
+reg7<-glmer(log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawStrictness+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "gaussian")
+```
+
+    ## Warning in glmer(log(HomicideRate) ~ MentalIllness + GDP + LawOfficers
+    ## + : calling glmer() with family=gaussian (identity link) as a shortcut to
+    ## lmer() is deprecated; please call lmer() directly
+
+    ## Warning: Some predictor variables are on very different scales: consider
+    ## rescaling
+
+``` r
+summary(reg7)
+```
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: 
+    ## log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + LawCover +  
+    ##     AlcoholUsers + DrugUsers + df$`Big Cities` + GunLawStrictness +  
+    ##     Black + GiniIndex + (1 | State) + (1 | Year) + UnenemploymentRate +  
+    ##     Education + WeaponProliferation
+    ##    Data: df
+    ## 
+    ## REML criterion at convergence: 58.6
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.2651 -0.4892  0.0021  0.5109  4.2937 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  State    (Intercept) 0.10760  0.3280  
+    ##  Year     (Intercept) 0.03779  0.1944  
+    ##  Residual             0.02886  0.1699  
+    ## Number of obs: 299, groups:  State, 50; Year, 6
+    ## 
+    ## Fixed effects:
+    ##                       Estimate Std. Error t value
+    ## (Intercept)          0.0722253  1.7112600   0.042
+    ## MentalIllness        0.0040926  0.0049316   0.830
+    ## GDP                 -0.0038056  0.0043941  -0.866
+    ## LawOfficers          0.0058611  0.0045312   1.293
+    ## LawCover            -0.0014041  0.0007493  -1.874
+    ## AlcoholUsers        -0.0005837  0.0023795  -0.245
+    ## DrugUsers            0.0064864  0.0052727   1.230
+    ## df$`Big Cities`      0.0777390  0.0487977   1.593
+    ## GunLawStrictness     0.0130382  0.0286214   0.456
+    ## Black                0.0298143  0.0059309   5.027
+    ## GiniIndex            2.6988589  2.9054387   0.929
+    ## UnenemploymentRate   0.0505603  0.0169325   2.986
+    ## Education           -0.0079323  0.0104423  -0.760
+    ## WeaponProliferation -0.0003275  0.0003465  -0.945
+
+    ## 
+    ## Correlation matrix not shown by default, as p = 14 > 12.
+    ## Use print(x, correlation=TRUE)  or
+    ##     vcov(x)        if you need it
+
+    ## fit warnings:
+    ## Some predictor variables are on very different scales: consider rescaling
+
+``` r
+AIC(reg7)
+```
+
+    ## [1] 92.64646
+
+``` r
+vif(reg7)
+```
+
+    ##       MentalIllness                 GDP         LawOfficers 
+    ##            1.203405            1.560657            1.278038 
+    ##            LawCover        AlcoholUsers           DrugUsers 
+    ##            1.678893            1.206268            1.180781 
+    ##     df$`Big Cities`    GunLawStrictness               Black 
+    ##            1.186222            1.439962            1.378662 
+    ##           GiniIndex  UnenemploymentRate           Education 
+    ##            1.577819            1.356599            1.149873 
+    ## WeaponProliferation 
+    ##            1.088298
