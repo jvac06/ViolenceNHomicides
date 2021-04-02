@@ -217,11 +217,33 @@ df$LawOfficers<-(df$LawEnforcementOfficers/df$Population)*10000
 df$LawCover<-(df$LawEnforcementOfficers/df$Area)*100
 df$GDP<-df$RealGDPperCapita/1000
 df$MentalIllness<-(df$SeriousMentalIllness/df$Population)*1000
-summary(df$MentalIllness)
+df$WeaponProliferation<-df$TotalWeapons/df$Population*1000
+summary(df$WeaponProliferation)
 ```
 
-    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-    ##   23.60   31.96   35.37   36.22   40.56   58.81      50
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max.     NA's 
+    ##   0.8094   8.3914  12.5641  21.7993  19.5332 596.8283       50
+
+## Creating values for Mapping
+
+``` r
+US <- map_data("state")
+US$region<-toupper(US$region)
+US$State<-US$region
+head(US)
+```
+
+    ##        long      lat group order  region subregion   State
+    ## 1 -87.46201 30.38968     1     1 ALABAMA      <NA> ALABAMA
+    ## 2 -87.48493 30.37249     1     2 ALABAMA      <NA> ALABAMA
+    ## 3 -87.52503 30.37249     1     3 ALABAMA      <NA> ALABAMA
+    ## 4 -87.53076 30.33239     1     4 ALABAMA      <NA> ALABAMA
+    ## 5 -87.57087 30.32665     1     5 ALABAMA      <NA> ALABAMA
+    ## 6 -87.58806 30.32665     1     6 ALABAMA      <NA> ALABAMA
+
+``` r
+temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
+```
 
 ## Creating data sets for individual years
 
@@ -255,27 +277,6 @@ Y11<-df %>%
 
 Y10<-df %>%
   filter(Year=="2010")
-```
-
-## Creating values for Mapping
-
-``` r
-US <- map_data("state")
-US$region<-toupper(US$region)
-US$State<-US$region
-head(US)
-```
-
-    ##        long      lat group order  region subregion   State
-    ## 1 -87.46201 30.38968     1     1 ALABAMA      <NA> ALABAMA
-    ## 2 -87.48493 30.37249     1     2 ALABAMA      <NA> ALABAMA
-    ## 3 -87.52503 30.37249     1     3 ALABAMA      <NA> ALABAMA
-    ## 4 -87.53076 30.33239     1     4 ALABAMA      <NA> ALABAMA
-    ## 5 -87.57087 30.32665     1     5 ALABAMA      <NA> ALABAMA
-    ## 6 -87.58806 30.32665     1     6 ALABAMA      <NA> ALABAMA
-
-``` r
-temp<-left_join(US,df[ which(df$Year>2011), ],by="State")
 ```
 
 ``` r
@@ -347,6 +348,34 @@ cowplot::plot_grid(p4, p5)
 ![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
+p0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = HomicideRate))
+
+p1 <- p0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+p2 <- p1 + scale_fill_gradient(low = "white", high = "Red3") +
+        labs(title = "Average Homicide Rate in the last 8 years") 
+p3<-p2 + theme_map()
+p4<-p3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+q0 <- ggplot(data = temp,
+             mapping = aes(x = long, y = lat, group = group, fill = LawOfficers))
+
+q1 <- q0 + geom_polygon(color = "gray90", size = 0.1) +
+    coord_map(projection = "albers", lat0 = 39, lat1 = 45) 
+
+q2 <- q1 + scale_fill_gradient(low = "white", high = "Darkorange") +
+        labs(title = "Law officers per 10,000 people over last 8 years ")+labs(fill="Officers") 
+q3<-q2 + theme_map()
+q5<-q3+theme(legend.direction = "vertical",legend.position = c(.8, .2),legend.title=element_text(size=8),legend.text=element_text(size = 6))
+
+cowplot::plot_grid(p4, q5)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
 ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(quantile)))) +
   stat_density_ridges(
     geom = "density_ridges_gradient",
@@ -362,7 +391,7 @@ ggplot(df, aes(x = HomicideRate, y = State, group= State, fill = factor(stat(qua
 
     ## Picking joint bandwidth of 0.423
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.8)
@@ -380,7 +409,7 @@ ggplot(data=df[ which(df$Year>2011), ], aes(x=HomicideRate,fill=GunLawRank)) +
   scale_fill_calc()
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -390,7 +419,7 @@ df %>%
   guides(fill=FALSE)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -400,7 +429,7 @@ df %>%
   guides(fill=FALSE)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -410,7 +439,7 @@ df %>%
   guides(fill=FALSE)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-3.png)<!-- -->
 
 ``` r
 df %>%
@@ -420,7 +449,7 @@ df %>%
   guides(fill=FALSE)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-4.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-4.png)<!-- -->
 
 ``` r
 df %>%
@@ -430,7 +459,7 @@ df %>%
   guides(fill=FALSE)
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-5.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-5.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate)) +
@@ -441,7 +470,7 @@ ggplot(data=df, aes(x=HomicideRate)) +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-6.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-6.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = CannabisMedical, fill = CannabisMedical)) +
@@ -449,7 +478,7 @@ ggplot(data=df, aes(x=HomicideRate, group = CannabisMedical, fill = CannabisMedi
   labs(title = "Distribution of Homicides: All by Medical Cannabis")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-7.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-7.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = CannabisRecreational, fill = CannabisRecreational)) +
@@ -457,7 +486,7 @@ ggplot(data=df, aes(x=HomicideRate, group = CannabisRecreational, fill = Cannabi
   labs(title = "Distribution of Homicide Rate by Recreational Cannabis")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-8.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-8.png)<!-- -->
 
 ``` r
 ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
@@ -465,7 +494,7 @@ ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
   labs(title = "Distribution of Homicide Rate by Gun Laws Rank")
 ```
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-9.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-9.png)<!-- -->
 
 ``` r
 ggplot(df, aes(x=Year, y=HomicideRate)) +
@@ -476,7 +505,7 @@ ggplot(df, aes(x=Year, y=HomicideRate)) +
 
     ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-10.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-10.png)<!-- -->
 
 ``` r
 df2<-df %>% 
@@ -484,15 +513,12 @@ df2<-df %>%
   summarise(MeanHomicide = mean(HomicideRate))  
 df2$Year<-as.factor(df2$Year)
 df2 %>%
-  ggplot( aes(x=Year, y=MeanHomicide)) +
+  ggplot( aes(x=as.numeric(Year), y=MeanHomicide)) +
     geom_point(shape=21, color="black", fill="#69b3a2", size=6) +
     geom_line( color="grey") +
     theme_ipsum() +
     ggtitle("Trend in Average Homicide Rates")
 ```
-
-    ## geom_path: Each group consists of only one observation. Do you need to
-    ## adjust the group aesthetic?
 
     ## Warning in grid.Call(C_stringMetric, as.graphicsAnnot(x$label)): font
     ## family not found in Windows font database
@@ -539,11 +565,13 @@ df2 %>%
     ## Warning in grid.Call(C_textBounds, as.graphicsAnnot(x$label), x$x, x$y, :
     ## font family not found in Windows font database
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-17-11.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-18-11.png)<!-- -->
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE,fig.width = 10,fig.height = 5)
 ```
+
+## Checking distribution of dependent variable
 
 ``` r
 x1<-ggplot(df, aes(x=HomicideRate)) + geom_histogram(color="gold",fill="seagreen")+ggtitle("Histogram of Homicide Rate")+xlab("Homicide Rate")
@@ -556,108 +584,11 @@ cowplot::plot_grid(x1, x2)
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.8)
 ```
-
-``` r
-reg1<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+TotalWeapons,data = df)
-
-summary(reg1)
-```
-
-    ## 
-    ## Call:
-    ## lm(formula = log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + 
-    ##     LawCover + AlcoholUsers + DrugUsers + `Big Cities` + Education + 
-    ##     GunLawRank + Black + GiniIndex + Year + UnenemploymentRate + 
-    ##     TotalWeapons, data = df)
-    ## 
-    ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -0.80357 -0.23156  0.01481  0.24312  1.20193 
-    ## 
-    ## Coefficients:
-    ##                           Estimate      Std. Error t value
-    ## (Intercept)        -239.1732781244   31.6241161935  -7.563
-    ## MentalIllness        -0.0047219584    0.0049913082  -0.946
-    ## GDP                   0.0000434643    0.0026603794   0.016
-    ## LawOfficers           0.0110990349    0.0039543661   2.807
-    ## LawCover             -0.0008739186    0.0004511267  -1.937
-    ## AlcoholUsers          0.0025270908    0.0014624419   1.728
-    ## DrugUsers            -0.0010258650    0.0065904336  -0.156
-    ## `Big Cities`          0.0458263707    0.0259587971   1.765
-    ## Education            -0.0483459534    0.0092404756  -5.232
-    ## GunLawRankB          -0.0057621687    0.0924486072  -0.062
-    ## GunLawRankC           0.1217242375    0.0985108022   1.236
-    ## GunLawRankD           0.1369830616    0.1019335725   1.344
-    ## GunLawRankF           0.1644412869    0.0981915203   1.675
-    ## GunLawRankX           0.1052919037    0.1475024818   0.714
-    ## Black                 0.0260707052    0.0025983850  10.033
-    ## GiniIndex             0.2037961314    1.4121541095   0.144
-    ## Year                  0.1209180744    0.0157074159   7.698
-    ## UnenemploymentRate    0.0941566977    0.0184744123   5.097
-    ## TotalWeapons          0.0000001705    0.0000003298   0.517
-    ##                                Pr(>|t|)    
-    ## (Intercept)           0.000000000000394 ***
-    ## MentalIllness                    0.3448    
-    ## GDP                              0.9870    
-    ## LawOfficers                      0.0053 ** 
-    ## LawCover                         0.0536 .  
-    ## AlcoholUsers                     0.0849 .  
-    ## DrugUsers                        0.8764    
-    ## `Big Cities`                     0.0784 .  
-    ## Education             0.000000298741429 ***
-    ## GunLawRankB                      0.9503    
-    ## GunLawRankC                      0.2175    
-    ## GunLawRankD                      0.1799    
-    ## GunLawRankF                      0.0949 .  
-    ## GunLawRankX                      0.4758    
-    ## Black              < 0.0000000000000002 ***
-    ## GiniIndex                        0.8853    
-    ## Year                  0.000000000000162 ***
-    ## UnenemploymentRate    0.000000583476946 ***
-    ## TotalWeapons                     0.6054    
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-    ## 
-    ## Residual standard error: 0.3354 on 330 degrees of freedom
-    ##   (151 observations deleted due to missingness)
-    ## Multiple R-squared:  0.6297, Adjusted R-squared:  0.6095 
-    ## F-statistic: 31.18 on 18 and 330 DF,  p-value: < 0.00000000000000022
-
-``` r
-plot(reg1)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-4.png)<!-- -->
-
-``` r
-#Checking for linearity
-#plot(reg1$fitted.values,dff$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
-#abline(0,1,col="red3",lwd=3)
-
-#checking for normality
-qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
-qqline(reg1$residuals,lwd=3,col="red3")
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-5.png)<!-- -->
-
-``` r
-#Checking for equality of variances
-#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
-#abline(0,0,col="red",lwd=3)
-
-#Checking for leverage points
-lev=hat(model.matrix(reg1))
-plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
-abline(3*mean(lev),0,col="red",lwd=3)
-```
-
-![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-21-6.png)<!-- -->
 
 ``` r
 colSums(is.na(df))
@@ -710,16 +641,278 @@ colSums(is.na(df))
     ##               LawOfficers                  LawCover 
     ##                         2                         2 
     ##                       GDP             MentalIllness 
-    ##                         0                        50
+    ##                         0                        50 
+    ##       WeaponProliferation 
+    ##                        50
 
 ``` r
-which(df$HomicideRate<1)
+colSums(is.na(Y19))
 ```
 
-    ## [1] 229
+    ##                     State                 StateCode 
+    ##                         0                         0 
+    ##                      Year              NumHomicides 
+    ##                         0                         0 
+    ##              NumDrugUsers           NumAlcoholUsers 
+    ##                         0                         0 
+    ##    LawEnforcementOfficers                Population 
+    ##                         0                         0 
+    ##                   RealGDP          RealGDPperCapita 
+    ##                         0                         0 
+    ##                 GiniIndex      SeriousMentalIllness 
+    ##                         0                         0 
+    ##        UnenemploymentRate         ViolentCrime...14 
+    ##                         0                         0 
+    ##        PropertyCrime...15 SubAbuseInpatientCareBeds 
+    ##                         0                         0 
+    ##           CannabisMedical      CannabisRecreational 
+    ##                         0                         0 
+    ##                GunLawRank                     Black 
+    ##                         0                         0 
+    ##                  Hispanic                      Area 
+    ##                         0                         0 
+    ##              Adults 19-25              Adults 26-34 
+    ##                         0                         0 
+    ##                Big Cities                 Education 
+    ##                         0                        50 
+    ##                    Region           AnyOtherWeapon1 
+    ##                         0                         0 
+    ##        DestructiveDevice2               Machinegun3 
+    ##                         0                         0 
+    ##                 Silencer4       ShortBarreledRifle5 
+    ##                         0                         0 
+    ##     ShortBarreledShotgun6              TotalWeapons 
+    ##                         0                         0 
+    ##        MurderNSlaugtherVC                    RapeVC 
+    ##                         0                         0 
+    ##                 RobberyVC       AggravatedAssaultVC 
+    ##                         0                         0 
+    ##         ViolentCrime...39        PropertyCrime...40 
+    ##                         0                         0 
+    ##          GunLawStrictness              HomicideRate 
+    ##                         0                         0 
+    ##                 DrugUsers              AlcoholUsers 
+    ##                         0                         0 
+    ##               LawOfficers                  LawCover 
+    ##                         0                         0 
+    ##                       GDP             MentalIllness 
+    ##                         0                         0 
+    ##       WeaponProliferation 
+    ##                         0
 
 ``` r
-reg2<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+Education+GunLawRank+Black+GiniIndex+(1|State)+Year+UnenemploymentRate,data = df)
+sum(!complete.cases(Y19))
+```
+
+    ## [1] 50
+
+``` r
+df<-df[ which(df$Year>2011), ]
+df$Year<-as.factor(df$Year)
+```
+
+``` r
+knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
+```
+
+``` r
+numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education')]
+correlations=cor(numerics,use = "pairwise.complete.obs")
+corrplot(correlations,method = "number",type="upper")
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+
+``` r
+knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.5)
+```
+
+## OLS Model without log
+
+``` r
+reg1<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+WeaponProliferation+Education,data = df)
+
+summary(reg1)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = HomicideRate ~ MentalIllness + GDP + LawOfficers + 
+    ##     LawCover + AlcoholUsers + DrugUsers + `Big Cities` + GunLawRank + 
+    ##     Black + GiniIndex + Year + UnenemploymentRate + WeaponProliferation + 
+    ##     Education, data = df)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.7412 -0.9956 -0.0926  0.7618  9.7762 
+    ## 
+    ## Coefficients:
+    ##                       Estimate Std. Error t value             Pr(>|t|)    
+    ## (Intercept)          18.044684   6.047852   2.984             0.003102 ** 
+    ## MentalIllness        -0.025088   0.029070  -0.863             0.388859    
+    ## GDP                  -0.004419   0.014364  -0.308             0.758599    
+    ## LawOfficers           0.124953   0.026284   4.754 0.000003210888119121 ***
+    ## LawCover             -0.007566   0.002497  -3.029             0.002681 ** 
+    ## AlcoholUsers         -0.013595   0.017306  -0.786             0.432797    
+    ## DrugUsers             0.032307   0.035458   0.911             0.363022    
+    ## `Big Cities`          0.160563   0.106130   1.513             0.131449    
+    ## GunLawRankB           0.046828   0.460262   0.102             0.919035    
+    ## GunLawRankC           0.514081   0.526947   0.976             0.330122    
+    ## GunLawRankD           0.696711   0.548558   1.270             0.205123    
+    ## GunLawRankF           0.958591   0.552976   1.734             0.084117 .  
+    ## Black                 0.118665   0.013800   8.599 0.000000000000000604 ***
+    ## GiniIndex           -10.160003   7.446608  -1.364             0.173555    
+    ## Year2013             -0.385333   0.638875  -0.603             0.546906    
+    ## Year2014              0.316640   0.681049   0.465             0.642347    
+    ## Year2016              3.281652   0.560817   5.852 0.000000013721197916 ***
+    ## Year2017              3.329858   0.534408   6.231 0.000000001718745655 ***
+    ## Year2018              3.004556   0.598479   5.020 0.000000924658832011 ***
+    ## UnenemploymentRate    0.503094   0.106466   4.725 0.000003657730403038 ***
+    ## WeaponProliferation  -0.004979   0.002393  -2.080             0.038413 *  
+    ## Education            -0.184279   0.050812  -3.627             0.000342 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.611 on 277 degrees of freedom
+    ##   (101 observations deleted due to missingness)
+    ## Multiple R-squared:  0.6116, Adjusted R-squared:  0.5822 
+    ## F-statistic: 20.77 on 21 and 277 DF,  p-value: < 0.00000000000000022
+
+``` r
+plot(reg1)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-4.png)<!-- -->
+
+``` r
+#Checking for linearity
+#plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
+#abline(0,1,col="red3",lwd=3)
+
+#checking for normality
+qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
+qqline(reg1$residuals,lwd=3,col="red3")
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-5.png)<!-- -->
+
+``` r
+#Checking for equality of variances
+#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
+#abline(0,0,col="red",lwd=3)
+
+#Checking for leverage points
+lev=hat(model.matrix(reg1))
+plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
+abline(3*mean(lev),0,col="red",lwd=3)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-26-6.png)<!-- -->
+
+## OLS with log
+
+``` r
+reg3<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+WeaponProliferation+Education,data = df)
+summary(reg3)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + 
+    ##     LawCover + AlcoholUsers + DrugUsers + `Big Cities` + GunLawRank + 
+    ##     Black + GiniIndex + Year + UnenemploymentRate + WeaponProliferation + 
+    ##     Education, data = df)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -0.75321 -0.21173  0.02258  0.21036  1.06624 
+    ## 
+    ## Coefficients:
+    ##                       Estimate Std. Error t value            Pr(>|t|)    
+    ## (Intercept)          4.0247108  1.2104021   3.325             0.00100 ** 
+    ## MentalIllness       -0.0059458  0.0058179  -1.022             0.30768    
+    ## GDP                  0.0012149  0.0028747   0.423             0.67292    
+    ## LawOfficers          0.0210802  0.0052604   4.007 0.00007899065836925 ***
+    ## LawCover            -0.0012903  0.0004998  -2.581             0.01035 *  
+    ## AlcoholUsers        -0.0044397  0.0034635  -1.282             0.20096    
+    ## DrugUsers            0.0021866  0.0070965   0.308             0.75822    
+    ## `Big Cities`         0.0555879  0.0212407   2.617             0.00936 ** 
+    ## GunLawRankB          0.0126995  0.0921157   0.138             0.89045    
+    ## GunLawRankC          0.1793203  0.1054618   1.700             0.09019 .  
+    ## GunLawRankD          0.1911256  0.1097871   1.741             0.08282 .  
+    ## GunLawRankF          0.2222060  0.1106712   2.008             0.04564 *  
+    ## Black                0.0239253  0.0027619   8.663 0.00000000000000039 ***
+    ## GiniIndex           -1.0800433  1.4903458  -0.725             0.46925    
+    ## Year2013            -0.1249153  0.1278628  -0.977             0.32945    
+    ## Year2014             0.0567149  0.1363035   0.416             0.67766    
+    ## Year2016             0.7073456  0.1122405   6.302 0.00000000115236596 ***
+    ## Year2017             0.7785192  0.1069551   7.279 0.00000000000348402 ***
+    ## Year2018             0.7297498  0.1197781   6.093 0.00000000370749327 ***
+    ## UnenemploymentRate   0.1420975  0.0213079   6.669 0.00000000013953717 ***
+    ## WeaponProliferation -0.0009085  0.0004790  -1.897             0.05892 .  
+    ## Education           -0.0430473  0.0101694  -4.233 0.00003139278378413 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.3225 on 277 degrees of freedom
+    ##   (101 observations deleted due to missingness)
+    ## Multiple R-squared:  0.6692, Adjusted R-squared:  0.6441 
+    ## F-statistic: 26.68 on 21 and 277 DF,  p-value: < 0.00000000000000022
+
+``` r
+plot(reg3)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-2.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-3.png)<!-- -->![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-4.png)<!-- -->
+
+``` r
+vif(reg3)
+```
+
+    ##                          GVIF Df GVIF^(1/(2*Df))
+    ## MentalIllness        2.412199  1        1.553126
+    ## GDP                  2.479681  1        1.574700
+    ## LawOfficers          2.780672  1        1.667535
+    ## LawCover             3.108155  1        1.762996
+    ## AlcoholUsers         6.612509  1        2.571480
+    ## DrugUsers            1.855403  1        1.362132
+    ## `Big Cities`         1.456155  1        1.206713
+    ## GunLawRank           4.884510  4        1.219278
+    ## Black                1.917067  1        1.384582
+    ## GiniIndex            2.334234  1        1.527820
+    ## Year                40.403132  5        1.447576
+    ## UnenemploymentRate   4.279675  1        2.068737
+    ## WeaponProliferation  1.209435  1        1.099743
+    ## Education            2.175797  1        1.475058
+
+``` r
+#Checking for linearity
+#plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
+#abline(0,1,col="red3",lwd=3)
+
+#checking for normality
+qqnorm(reg3$residuals,pch=20,main="Checking for Normality Plot")
+qqline(reg3$residuals,lwd=3,col="red3")
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-5.png)<!-- -->
+
+``` r
+#Checking for equality of variances
+#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
+#abline(0,0,col="red",lwd=3)
+
+#Checking for leverage points
+lev=hat(model.matrix(reg3))
+plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
+abline(3*mean(lev),0,col="red",lwd=3)
+```
+
+![](Hammad-Homicide_files/figure-gfm/unnamed-chunk-27-6.png)<!-- -->
+\#\# LMER with FE (States)
+
+``` r
+reg2<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
 ```
 
     ## Warning: Some predictor variables are on very different scales: consider
@@ -732,45 +925,50 @@ summary(reg2)
     ## Linear mixed model fit by REML ['lmerMod']
     ## Formula: 
     ## log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + LawCover +  
-    ##     AlcoholUsers + DrugUsers + df$`Big Cities` + Education +  
-    ##     GunLawRank + Black + GiniIndex + (1 | State) + Year + UnenemploymentRate
+    ##     AlcoholUsers + DrugUsers + df$`Big Cities` + GunLawRank +  
+    ##     Region + Black + GiniIndex + (1 | State) + (1 | Year) + UnenemploymentRate +  
+    ##     Education + WeaponProliferation
     ##    Data: df
     ## 
-    ## REML criterion at convergence: 50
+    ## REML criterion at convergence: 58.4
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.1334 -0.5419  0.0154  0.5320  4.3268 
+    ## -3.1272 -0.5007  0.0368  0.4970  4.2582 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  State    (Intercept) 0.11930  0.3454  
-    ##  Residual             0.03134  0.1770  
-    ## Number of obs: 349, groups:  State, 50
+    ##  State    (Intercept) 0.09602  0.3099  
+    ##  Year     (Intercept) 0.03352  0.1831  
+    ##  Residual             0.02838  0.1685  
+    ## Number of obs: 299, groups:  State, 50; Year, 6
     ## 
     ## Fixed effects:
-    ##                       Estimate  Std. Error t value
-    ## (Intercept)        -96.2575220  23.0733229  -4.172
-    ## MentalIllness       -0.0016637   0.0039143  -0.425
-    ## GDP                 -0.0064505   0.0040818  -1.580
-    ## LawOfficers          0.0037116   0.0030356   1.223
-    ## LawCover            -0.0011727   0.0007373  -1.591
-    ## AlcoholUsers         0.0041592   0.0008261   5.035
-    ## DrugUsers            0.0031292   0.0048805   0.641
-    ## df$`Big Cities`      0.0702076   0.0506263   1.387
-    ## Education           -0.0013585   0.0099305  -0.137
-    ## GunLawRankB          0.0367695   0.0671626   0.547
-    ## GunLawRankC          0.1994800   0.0788558   2.530
-    ## GunLawRankD          0.1750678   0.0793570   2.206
-    ## GunLawRankF          0.1395672   0.0750588   1.859
-    ## GunLawRankX          0.0852228   0.0919870   0.926
-    ## Black                0.0295965   0.0061173   4.838
-    ## GiniIndex            5.5987381   2.9729483   1.883
-    ## Year                 0.0470159   0.0117972   3.985
-    ## UnenemploymentRate   0.0240449   0.0147845   1.626
+    ##                       Estimate Std. Error t value
+    ## (Intercept)         -1.9698783  1.8297843  -1.077
+    ## MentalIllness        0.0054044  0.0049047   1.102
+    ## GDP                  0.0004373  0.0044820   0.098
+    ## LawOfficers          0.0047369  0.0044931   1.054
+    ## LawCover            -0.0005182  0.0007975  -0.650
+    ## AlcoholUsers        -0.0006291  0.0023833  -0.264
+    ## DrugUsers            0.0082570  0.0052742   1.566
+    ## df$`Big Cities`      0.0118486  0.0519010   0.228
+    ## GunLawRankB         -0.0370026  0.0759655  -0.487
+    ## GunLawRankC          0.1785459  0.1186986   1.504
+    ## GunLawRankD          0.1796075  0.1343155   1.337
+    ## GunLawRankF          0.1332461  0.1369445   0.973
+    ## RegionNorthEast     -0.3255095  0.1606921  -2.026
+    ## RegionSouthEast     -0.1101308  0.1727631  -0.637
+    ## RegionSouthWest      0.3962555  0.2155476   1.838
+    ## RegionWest           0.0415146  0.1437653   0.289
+    ## Black                0.0342483  0.0074707   4.584
+    ## GiniIndex            4.4237028  3.0655628   1.443
+    ## UnenemploymentRate   0.0591214  0.0169337   3.491
+    ## Education            0.0020171  0.0107716   0.187
+    ## WeaponProliferation -0.0004206  0.0003479  -1.209
 
     ## 
-    ## Correlation matrix not shown by default, as p = 18 > 12.
+    ## Correlation matrix not shown by default, as p = 21 > 12.
     ## Use print(x, correlation=TRUE)  or
     ##     vcov(x)        if you need it
 
@@ -778,58 +976,246 @@ summary(reg2)
     ## Some predictor variables are on very different scales: consider rescaling
 
 ``` r
+vif(reg2)
+```
+
+    ##                         GVIF Df GVIF^(1/(2*Df))
+    ## MentalIllness       1.229714  1        1.108925
+    ## GDP                 1.739619  1        1.318946
+    ## LawOfficers         1.298285  1        1.139423
+    ## LawCover            2.050866  1        1.432085
+    ## AlcoholUsers        1.252574  1        1.119185
+    ## DrugUsers           1.211589  1        1.100722
+    ## df$`Big Cities`     1.497094  1        1.223558
+    ## GunLawRank          2.125363  4        1.098827
+    ## Region              6.212890  4        1.256498
+    ## Black               2.438253  1        1.561491
+    ## GiniIndex           1.931254  1        1.389696
+    ## UnenemploymentRate  1.402591  1        1.184310
+    ## Education           1.275571  1        1.129412
+    ## WeaponProliferation 1.120826  1        1.058691
+
+``` r
 AIC(reg1)
 ```
 
-    ## [1] 248.4539
+    ## [1] 1156.939
 
 ``` r
 AIC(reg2)
 ```
 
-    ## [1] 90.01046
+    ## [1] 106.4207
 
 ``` r
-reg3<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+Education+GunLawRank+Black+GiniIndex+Year+Region,data = Y18,na.action = na.exclude)
-summary(reg3)
+AIC (reg3)
 ```
 
+    ## [1] 194.9062
+
+## Same model without year as a factor
+
+``` r
+reg4<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+UnenemploymentRate+Education+WeaponProliferation,data = df)
+```
+
+    ## Warning: Some predictor variables are on very different scales: consider
+    ## rescaling
+
+``` r
+AIC(reg4)
+```
+
+    ## [1] 132.3731
+
+``` r
+summary(reg4)
+```
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: 
+    ## log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + LawCover +  
+    ##     AlcoholUsers + DrugUsers + df$`Big Cities` + GunLawRank +  
+    ##     Region + Black + GiniIndex + (1 | State) + UnenemploymentRate +  
+    ##     Education + WeaponProliferation
+    ##    Data: df
     ## 
-    ## Call:
-    ## lm(formula = HomicideRate ~ MentalIllness + GDP + LawOfficers + 
-    ##     LawCover + AlcoholUsers + DrugUsers + `Big Cities` + Education + 
-    ##     GunLawRank + Black + GiniIndex + Year + Region, data = Y18, 
-    ##     na.action = na.exclude)
+    ## REML criterion at convergence: 86.4
     ## 
-    ## Residuals:
+    ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -3.6975 -1.2010 -0.0859  0.7858  4.9249 
+    ## -3.0272 -0.5762 -0.0147  0.5656  4.3990 
     ## 
-    ## Coefficients: (1 not defined because of singularities)
-    ##                  Estimate Std. Error t value Pr(>|t|)   
-    ## (Intercept)     -6.814983  25.526081  -0.267  0.79125   
-    ## MentalIllness    0.018481   0.098837   0.187  0.85289   
-    ## GDP             -0.024881   0.052746  -0.472  0.64044   
-    ## LawOfficers      0.194941   0.093074   2.094  0.04449 * 
-    ## LawCover        -0.006438   0.008434  -0.763  0.45105   
-    ## AlcoholUsers    -0.089637   0.066732  -1.343  0.18894   
-    ## DrugUsers        0.218334   0.126399   1.727  0.09406 . 
-    ## `Big Cities`     0.100954   0.385295   0.262  0.79504   
-    ## Education        0.019863   0.204729   0.097  0.92334   
-    ## GunLawRankB      0.358034   1.676314   0.214  0.83227   
-    ## GunLawRankC      0.324346   1.939254   0.167  0.86826   
-    ## GunLawRankD      0.162084   1.947833   0.083  0.93422   
-    ## GunLawRankF      1.193395   2.032236   0.587  0.56130   
-    ## Black            0.188825   0.054905   3.439  0.00169 **
-    ## GiniIndex        8.605268  27.359466   0.315  0.75523   
-    ## Year                   NA         NA      NA       NA   
-    ## RegionNorthEast -2.192907   1.333525  -1.644  0.11019   
-    ## RegionSouthEast -2.007416   1.308420  -1.534  0.13512   
-    ## RegionSouthWest  1.015076   1.765186   0.575  0.56941   
-    ## RegionWest       0.132524   1.178232   0.112  0.91117   
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  State    (Intercept) 0.13434  0.3665  
+    ##  Residual             0.03215  0.1793  
+    ## Number of obs: 299, groups:  State, 50
     ## 
-    ## Residual standard error: 2.098 on 31 degrees of freedom
-    ## Multiple R-squared:  0.6049, Adjusted R-squared:  0.3755 
-    ## F-statistic: 2.637 on 18 and 31 DF,  p-value: 0.008592
+    ## Fixed effects:
+    ##                       Estimate Std. Error t value
+    ## (Intercept)         -5.8003527  1.8512390  -3.133
+    ## MentalIllness        0.0059181  0.0046984   1.260
+    ## GDP                 -0.0060948  0.0048882  -1.247
+    ## LawOfficers          0.0021882  0.0032962   0.664
+    ## LawCover            -0.0003709  0.0008789  -0.422
+    ## AlcoholUsers         0.0050849  0.0008718   5.833
+    ## DrugUsers            0.0069815  0.0054098   1.291
+    ## df$`Big Cities`     -0.0086042  0.0604604  -0.142
+    ## GunLawRankB         -0.0584399  0.0813661  -0.718
+    ## GunLawRankC          0.1573704  0.1283375   1.226
+    ## GunLawRankD          0.1760616  0.1463696   1.203
+    ## GunLawRankF          0.1193378  0.1490237   0.801
+    ## RegionNorthEast     -0.3923228  0.1854666  -2.115
+    ## RegionSouthEast     -0.2049867  0.1986119  -1.032
+    ## RegionSouthWest      0.3804261  0.2509548   1.516
+    ## RegionWest           0.1590800  0.1667273   0.954
+    ## Black                0.0368454  0.0086809   4.244
+    ## GiniIndex           11.3792684  3.0932543   3.679
+    ## UnenemploymentRate   0.0006404  0.0136762   0.047
+    ## Education            0.0148543  0.0113783   1.305
+    ## WeaponProliferation -0.0003961  0.0003594  -1.102
+
+    ## 
+    ## Correlation matrix not shown by default, as p = 21 > 12.
+    ## Use print(x, correlation=TRUE)  or
+    ##     vcov(x)        if you need it
+
+    ## fit warnings:
+    ## Some predictor variables are on very different scales: consider rescaling
+
+## Same model in GLMER
+
+``` r
+reg5<-glmer(log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "gaussian")
+```
+
+    ## Warning in glmer(log(HomicideRate) ~ MentalIllness + GDP + LawOfficers
+    ## + : calling glmer() with family=gaussian (identity link) as a shortcut to
+    ## lmer() is deprecated; please call lmer() directly
+
+    ## Warning: Some predictor variables are on very different scales: consider
+    ## rescaling
+
+``` r
+summary(reg5)
+```
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: 
+    ## log(HomicideRate) ~ MentalIllness + GDP + LawOfficers + LawCover +  
+    ##     AlcoholUsers + DrugUsers + df$`Big Cities` + GunLawRank +  
+    ##     Region + Black + GiniIndex + (1 | State) + (1 | Year) + UnenemploymentRate +  
+    ##     Education + WeaponProliferation
+    ##    Data: df
+    ## 
+    ## REML criterion at convergence: 58.4
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.1272 -0.5007  0.0368  0.4970  4.2582 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  State    (Intercept) 0.09602  0.3099  
+    ##  Year     (Intercept) 0.03352  0.1831  
+    ##  Residual             0.02838  0.1685  
+    ## Number of obs: 299, groups:  State, 50; Year, 6
+    ## 
+    ## Fixed effects:
+    ##                       Estimate Std. Error t value
+    ## (Intercept)         -1.9698783  1.8297843  -1.077
+    ## MentalIllness        0.0054044  0.0049047   1.102
+    ## GDP                  0.0004373  0.0044820   0.098
+    ## LawOfficers          0.0047369  0.0044931   1.054
+    ## LawCover            -0.0005182  0.0007975  -0.650
+    ## AlcoholUsers        -0.0006291  0.0023833  -0.264
+    ## DrugUsers            0.0082570  0.0052742   1.566
+    ## df$`Big Cities`      0.0118486  0.0519010   0.228
+    ## GunLawRankB         -0.0370026  0.0759655  -0.487
+    ## GunLawRankC          0.1785459  0.1186986   1.504
+    ## GunLawRankD          0.1796075  0.1343155   1.337
+    ## GunLawRankF          0.1332461  0.1369445   0.973
+    ## RegionNorthEast     -0.3255095  0.1606921  -2.026
+    ## RegionSouthEast     -0.1101308  0.1727631  -0.637
+    ## RegionSouthWest      0.3962555  0.2155476   1.838
+    ## RegionWest           0.0415146  0.1437653   0.289
+    ## Black                0.0342483  0.0074707   4.584
+    ## GiniIndex            4.4237028  3.0655628   1.443
+    ## UnenemploymentRate   0.0591214  0.0169337   3.491
+    ## Education            0.0020171  0.0107716   0.187
+    ## WeaponProliferation -0.0004206  0.0003479  -1.209
+
+    ## 
+    ## Correlation matrix not shown by default, as p = 21 > 12.
+    ## Use print(x, correlation=TRUE)  or
+    ##     vcov(x)        if you need it
+
+    ## fit warnings:
+    ## Some predictor variables are on very different scales: consider rescaling
+
+``` r
+AIC(reg5)
+```
+
+    ## [1] 106.4207
+
+``` r
+df$HomicideRate2<-df$HomicideRate*10
+summary(df$HomicideRate2)
+```
+
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    9.32   27.10   45.13   47.51   60.81  158.65
+
+``` r
+df$HomicideRate2<-round(df$HomicideRate2,0)
+```
+
+## Now Running Poisson
+
+``` r
+reg6<-glmer(HomicideRate2~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "poisson")
+```
+
+    ## Warning: Some predictor variables are on very different scales: consider
+    ## rescaling
+
+    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl =
+    ## control$checkConv, : Model failed to converge with max|grad| = 0.00964666
+    ## (tol = 0.001, component 1)
+
+    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, : Model is nearly unidentifiable: very large eigenvalue
+    ##  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+    ##  - Rescale variables?
+
+``` r
+vif(reg6)
+```
+
+    ##                         GVIF Df GVIF^(1/(2*Df))
+    ## MentalIllness       1.194647  1        1.092999
+    ## GDP                 1.881642  1        1.371730
+    ## LawOfficers         1.302295  1        1.141181
+    ## LawCover            1.973570  1        1.404838
+    ## AlcoholUsers        1.253132  1        1.119434
+    ## DrugUsers           1.163727  1        1.078762
+    ## df$`Big Cities`     1.486099  1        1.219057
+    ## GunLawRank          2.045621  4        1.093586
+    ## Region              6.240361  4        1.257191
+    ## Black               2.432901  1        1.559776
+    ## GiniIndex           1.970061  1        1.403589
+    ## UnenemploymentRate  1.543044  1        1.242193
+    ## Education           1.243360  1        1.115060
+    ## WeaponProliferation 1.062705  1        1.030876
+
+``` r
+AIC(reg6)
+```
+
+    ## [1] 2225.017
+
+``` r
+#reg7<-glmer.nb(log(HomicideRate2)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
+#AIC(reg7)
+```
