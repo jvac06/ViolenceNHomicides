@@ -1,0 +1,345 @@
+---
+title: "R Notebook"
+author: "Jesid"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(here)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+```
+# Read Data
+```{r}
+df <- read_excel(here("data", "HomicideData_Original_revised.xlsx"), sheet="HomicideData")
+colSums(is.na(df))
+```
+
+# Distribution of DV: All Years All States
+```{r}
+ggplot(data=df, aes(x=(NumHomicides/Population) *100000)) +
+  geom_histogram(aes(y=..density..), col='black', fill='white') +
+  geom_density(alpha=.6, fill="pink") +
+  labs(title = "Distribution of Homicides: All States & Years")
+```
+
+# Preparing Data for Modeling
+```{r}
+# Removing DC - not a state
+df <- df %>% filter(StateCode !="DC")
+# Grouping Firearms
+df <- df %>% mutate(Firearms = AnyOtherWeapon1 + Machinegun3 + ShortBarreledRifle5 + ShortBarreledShotgun6)
+# Grouping Violent Crime Except Murder
+df <- df %>% mutate(VCNotMurder = RapeVC + AggravatedAssaultVC + RobberyVC)
+# Selecting data of interest for modeling
+data <- df %>% select(Year, State, NumHomicides, Firearms, NumDrugUsers, NumAlcoholUsers, SeriousMentalIllness,
+                      Population, RealGDP, GiniIndex, UnenemploymentRate, LawEnforcementOfficers, 
+                      CannabisMedical, CannabisRecreational, SubAbuseInpatientCareBeds,
+                      VCNotMurder,PropertyCrime, White, Black, Hispanic, Asian, `Children 0-18`, `Adults 19-25`, `Adults 26-34`, Education,
+                      PermitAllFirearms, reportall, defactoreg, relinquishment
+                      )
+# Rename Variables in Data
+data <- data %>% rename(ViolentCrime = VCNotMurder, BedsForAbuse = SubAbuseInpatientCareBeds,
+                        UnemploymentRate = UnenemploymentRate,
+                        ReportAllFirearms = reportall, GunRegistration = defactoreg,
+                        Children18orUnder = `Children 0-18`,
+                        RelinquishGun = relinquishment,
+                        Adult19to25 = `Adults 19-25`,
+                        Adult26to34 = `Adults 26-34`)
+# Checking data
+colSums(is.na(data))
+```
+
+## Creating New Variable Transformation
+```{r}
+# Factorize
+cols <- c("PermitAllFirearms", "ReportAllFirearms", "GunRegistration", "CannabisMedical", "CannabisRecreational","RelinquishGun")
+for (col in cols){
+  data[[col]] <- factor(data[[col]], levels = c(0,1), labels = c("No", "Yes"))  
+}
+
+# Year to Factor  
+data$Year <- relevel(factor(data$Year), "2010")
+
+# convert to Pop estimate - all except laws, gini, and unemployment rate
+unit_of_people <- 100000
+# cols
+cols <- c("NumDrugUsers",  "NumAlcoholUsers", "LawEnforcementOfficers", "SeriousMentalIllness", "ViolentCrime", 
+          "PropertyCrime", "BedsForAbuse", "NumHomicides", "Firearms", "White", "Black", "Hispanic", "Asian",
+          "Children18orUnder","Adult19to25", "Adult26to34")
+data[cols] <- (data[cols] / data[["Population"]]) * unit_of_people
+# Real GDP per Capita
+data$RealGDP <- data$RealGDP/data$Population
+# convert Gini to percentage
+data['GiniIndex'] = data['GiniIndex'] * 100
+```
+
+## Create Lags
+```{r}
+# testing lags
+data <- data %>%
+  arrange(Year) %>%
+  group_by(State) %>%
+  mutate(OneLagLawEnforcement = lag(LawEnforcementOfficers),
+         OneLagGunPermit = lag(PermitAllFirearms),
+         OneLagGunRegister = lag(GunRegistration),
+         OneLagGunReport = lag(ReportAllFirearms),
+         OneLagGunRelinquish = lag(RelinquishGun))
+
+```
+
+
+# Modeling
+## Fixed Effects - Causes
+```{r}
+# base model - only causes
+lm1 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+           GiniIndex + UnemploymentRate + log(RealGDP)  + Black + Hispanic + Asian + 
+           Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm1, which = c(1,2))
+# Normality
+shapiro.test(lm1$res)
+# Homoskedasticity
+bartlett.test(list(lm1$res, lm1$fit))
+library(car)
+vif(lm1)
+library(lmtest)
+dwtest(lm1)
+# stargazer::stargazer(lm1, type="text", single.row = T)
+```
+## Fixed Effects - Causes & Interventions(Law Enforcement)
+```{r}
+# base model - only causes
+lm2 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+           GiniIndex + UnemploymentRate + log(RealGDP) + log(LawEnforcementOfficers) + Black + Hispanic + 
+             Asian + Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm2, which = c(1,2))
+# Normality
+shapiro.test(lm2$res)
+# Homoskedasticity
+bartlett.test(list(lm2$res, lm2$fit))
+library(car)
+vif(lm2)
+library(lmtest)
+dwtest(lm2)
+# stargazer::stargazer(lm1, lm2, type="text", single.row = T)
+```
+## Fixed Effects - With Policies
+```{r}
+# base model - only causes
+lm3 <- glm(log(NumHomicides) ~ log(Firearms) + (PermitAllFirearms + GunRegistration + RelinquishGun) + ReportAllFirearms + 
+             NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness + GiniIndex + UnemploymentRate + 
+             log(RealGDP) + log(LawEnforcementOfficers) + Black + Hispanic + 
+             Asian + Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm3, which = c(1,2))
+# Normality
+shapiro.test(lm3$res)
+# Homoskedasticity
+bartlett.test(list(lm3$res, lm3$fit))
+library(car)
+vif(lm3)
+library(lmtest)
+dwtest(lm3)
+# stargazer::stargazer(lm1, lm2, lm3, type="text", single.row = T)
+```
+## Fixed Effects - With Policies & Interactions
+```{r}
+# base model - only causes
+lm4 <- glm(log(NumHomicides) ~ log(Firearms)*(PermitAllFirearms + GunRegistration + RelinquishGun) + ReportAllFirearms + 
+             NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness + GiniIndex + UnemploymentRate + 
+             log(RealGDP) + log(LawEnforcementOfficers) + Black + Hispanic + 
+             Asian + Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm4, which = c(1,2))
+# Normality
+shapiro.test(lm4$res)
+# Homoskedasticity
+bartlett.test(list(lm4$res, lm4$fit))
+library(car)
+vif(lm4)
+library(lmtest)
+dwtest(lm4)
+```
+
+### Compare Linear Models
+```{r}
+stargazer::stargazer(lm1, lm2, lm3, lm4, type="text", single.row = T)
+```
+
+## Fixed Effects - Lags On Laws
+```{r}
+# base model - only causes
+lm5 <- glm(log(NumHomicides) ~ log(Firearms)*(OneLagGunPermit + OneLagGunRegister + OneLagGunRelinquish) + OneLagGunReport + 
+             NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness + GiniIndex + UnemploymentRate + 
+             log(RealGDP) + log(OneLagLawEnforcement) + Black + Hispanic + 
+             Asian + Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = gaussian(link = "identity"))
+
+plot(lm5, which = c(1,2))
+# Normality
+shapiro.test(lm5$res)
+# Homoskedasticity
+bartlett.test(list(lm5$res, lm5$fit))
+library(car)
+vif(lm5)
+library(lmtest)
+dwtest(lm5)
+```
+## Fixed Effects - Lags On Laws (Using Poisson Distribution)
+```{r}
+# base model - only causes
+lm6 <- glm(round(NumHomicides,0) ~ log(Firearms)*(OneLagGunPermit + OneLagGunRegister + OneLagGunRelinquish) + OneLagGunReport + 
+             NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness + GiniIndex + UnemploymentRate + 
+             log(RealGDP) + log(OneLagLawEnforcement) + Black + Hispanic + 
+             Asian + Children18orUnder + Adult19to25 + Education + Year + State, 
+           data=data, family = poisson(link = "log"))
+
+plot(lm6, which = c(1,2))
+
+# Homoskedasticity
+bartlett.test(list(lm6$res, lm6$fit))
+library(car)
+# Multicollineairty
+vif(lm6)
+# Independence
+dwtest(lm6)
+```
+
+```{r}
+stargazer::stargazer(lm5, lm6, type="text", single.row = T)
+```
+
+
+
+## Model with Multilevels - Causes & Interventions(Without Lags)
+```{r}
+library(lme4)
+
+re1 <- lmer(log(NumHomicides) ~ NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(LawEnforcementOfficers) +
+            log(Firearms) + (PermitAllFirearms + RelinquishGun + GunRegistration) + ReportAllFirearms +
+            CannabisRecreational + CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + 
+            Children18orUnder + Adult19to25 + Education, 
+            data=data, REML = F)
+# ranef(re1)
+
+# Normality - Failing
+shapiro.test(residuals(re1))
+
+# Homoskedasticity - Failing
+bartlett.test(list(residuals(re1), fitted(re1)))
+
+# Multicollinearity - Failing
+vif(re1)
+```
+
+
+
+## Assumption Checking LMM
+```{r}
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = re1, plot = F)
+plot(simulationOutput)
+```
+## Model with Multilevels - Causes & Interventions(With Interactions)
+```{r}
+library(lme4)
+
+re2 <- lmer(log(NumHomicides) ~ NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(LawEnforcementOfficers) +
+            log(Firearms)*(PermitAllFirearms + GunRegistration + RelinquishGun) + ReportAllFirearms +
+            CannabisRecreational + CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + 
+              Children18orUnder + Adult19to25 + Education, data=data)
+# ranef(re2)
+
+# Multicollinearity - Failing
+vif(re2)
+# Assumption Checking
+simulationOutput <- simulateResiduals(fittedModel = re2, plot = F)
+plot(simulationOutput)
+testDispersion(simulationOutput = simulationOutput)
+```
+## Model with Multilevels - Causes & Interventions (With Lags)
+```{r}
+re3 <- lmer(log(NumHomicides) ~ NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(OneLagLawEnforcement) +
+            log(Firearms) + (OneLagGunRegister+OneLagGunPermit + OneLagGunRelinquish) + OneLagGunReport  + CannabisRecreational+ 
+            CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + Children18orUnder + Adult19to25 + Education, 
+            data=data, REML = F)
+# ranef(re3)
+
+# Multicollinearity - Failing
+vif(re3)
+# Assumption Checking
+simulationOutput <- simulateResiduals(fittedModel = re3, plot = F)
+plot(simulationOutput)
+testDispersion(simulationOutput = simulationOutput)
+```
+
+## Model with Multilevels - Causes & Interventions (With Lags & Interaction)
+```{r}
+re4 <- lmer(log(NumHomicides) ~ NumDrugUsers*CannabisRecreational+ NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(OneLagLawEnforcement) +
+            log(Firearms)*(OneLagGunPermit) + OneLagGunRegister + OneLagGunRelinquish + OneLagGunReport  +
+             CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + Children18orUnder + 
+            Adult19to25 + Education, data=data, REML = F)
+# ranef(re3)
+
+# Multicollinearity - Failing
+vif(re4)
+# Assumption Checking
+simulationOutput <- simulateResiduals(fittedModel = re4, plot = F)
+plot(simulationOutput)
+testDispersion(simulationOutput = simulationOutput)
+```
+
+
+
+## Model with Multilevels - Poisson GLMM
+```{r}
+library(lme4)
+
+re5 <- glmer(round(NumHomicides,0) ~  NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(OneLagLawEnforcement) +
+            log(Firearms)*(OneLagGunPermit ) + OneLagGunRegister + OneLagGunRelinquish + OneLagGunReport  + CannabisRecreational+
+            CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + Children18orUnder + Adult19to25 +
+            Education, data=data, family = poisson(link="log"))
+# ranef(re1)
+
+# Multicollinearity - Failing
+vif(re5)
+# Assumption Checking
+simulationOutput <- simulateResiduals(fittedModel = re5, plot = F)
+plot(simulationOutput)
+testDispersion(simulationOutput = simulationOutput)
+```
+### Compare Poisson & Log
+```{r, echo=FALSE, warning=FALSE}
+stargazer::stargazer( re1, re2, re3, re4, re5, type="text", single.row = T)
+```
+
+
+## Effects
+```{r}
+library(effects)
+effects <- allEffects(re4)
+#Plot All
+for (i in 1:length(effects)) {
+  print(plot(effects, selection = i))
+}
+```
+

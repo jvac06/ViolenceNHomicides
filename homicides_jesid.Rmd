@@ -18,7 +18,7 @@ library(ggplot2)
 ```
 # Read Data
 ```{r}
-df <- read_excel(here("data", "HomicideData_Original.xlsx"), sheet="HomicideData")
+df <- read_excel(here("data", "HomicideData_Original_revised.xlsx"), sheet="HomicideData")
 colSums(is.na(df))
 ```
 
@@ -180,13 +180,16 @@ df <- df %>% mutate(VCNotMurder = RapeVC + AggravatedAssaultVC + RobberyVC)
 data <- df %>% select(Year, State, NumHomicides, Firearms, NumDrugUsers, NumAlcoholUsers, SeriousMentalIllness,
                       Population, RealGDP, GiniIndex, UnenemploymentRate, LawEnforcementOfficers, 
                       CannabisMedical, CannabisRecreational, SubAbuseInpatientCareBeds,
-                      VCNotMurder,PropertyCrime,
+                      VCNotMurder,PropertyCrime, White, Black, Hispanic, Asian, `Children 0-18`, `Adults 19-25`, `Adults 26-34`, Education,
                       PermitAllFirearms, reportall, defactoreg
                       )
 # Rename Variables in Data
 data <- data %>% rename(ViolentCrime = VCNotMurder, BedsForAbuse = SubAbuseInpatientCareBeds,
                         UnemploymentRate = UnenemploymentRate,
-                        ReportAllFirearms = reportall, GunRegistration = defactoreg)
+                        ReportAllFirearms = reportall, GunRegistration = defactoreg,
+                        Children18orUnder = `Children 0-18`,
+                        Adult19to25 = `Adults 19-25`,
+                        Adult26to34 = `Adults 26-34`)
 # Checking data
 colSums(is.na(data))
 ```
@@ -202,13 +205,16 @@ for (col in cols){
 # Year to Factor  
 data$Year <- relevel(factor(data$Year), "2010")
 
-
 # convert to Pop estimate - all except laws, gini, and unemployment rate
 unit_of_people <- 100000
 # cols
 cols <- c("NumDrugUsers",  "NumAlcoholUsers", "LawEnforcementOfficers", "SeriousMentalIllness", "ViolentCrime", 
-          "PropertyCrime", "BedsForAbuse", "NumHomicides", "RealGDP", "Firearms")
+          "PropertyCrime", "BedsForAbuse", "NumHomicides", "RealGDP", "Firearms", "White", "Black", "Hispanic", "Asian", "Children18orUnder",
+          "Adult19to25", "Adult26to34")
 data[cols] <- (data[cols] / data[["Population"]]) * unit_of_people
+
+# convert Gini to percentage
+data['GiniIndex'] = data['GiniIndex'] * 100
 ```
 
 
@@ -217,7 +223,8 @@ data[cols] <- (data[cols] / data[["Population"]]) * unit_of_people
 ```{r}
 # base model - only causes
 lm1 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
-            GiniIndex + UnemploymentRate + log(RealGDP) + Year, data=data, family = gaussian(link = "identity"))
+            GiniIndex + UnemploymentRate + log(RealGDP) + Year + Black + Hispanic + Asian + Children18orUnder + Adult19to25 + Education, 
+           data=data, family = gaussian(link = "identity"))
 
 plot(lm1, which = c(1,2))
 # Normality
@@ -228,14 +235,14 @@ library(car)
 vif(lm1)
 library(lmtest)
 dwtest(lm1)
-stargazer::stargazer(lm1, type="text", single.row = T)
+# stargazer::stargazer(lm1, type="text", single.row = T)
 ```
 ## Fixed Effects - Causes & Interventions(LE & AbuseBeds)
 ```{r}
 # base model - only causes
 lm2 <- glm(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
-           GiniIndex + UnemploymentRate + log(RealGDP) + Year + log(LawEnforcementOfficers), 
-           data=data, family = gaussian(link = "identity"))
+           GiniIndex + UnemploymentRate + log(RealGDP) + Year + log(LawEnforcementOfficers) + Black + Hispanic + Asian + Children18orUnder +
+             Adult19to25 + Education, data=data, family = gaussian(link = "identity"))
 
 plot(lm2, which = c(1,2))
 # Normality
@@ -246,20 +253,26 @@ library(car)
 vif(lm2)
 library(lmtest)
 dwtest(lm2)
-stargazer::stargazer(lm1, lm2, type="text", single.row = T)
+# stargazer::stargazer(lm1, lm2, type="text", single.row = T)
 ```
 ## Model with Multilevels - Causes & Interventions
 ```{r}
 library(lme4)
 
-re1 <- lmer(log(NumHomicides) ~ log(Firearms) + NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
-            GiniIndex + UnemploymentRate + log(RealGDP) + Year  + log(LawEnforcementOfficers) +
-            PermitAllFirearms + ReportAllFirearms + GunRegistration + CannabisRecreational + CannabisMedical
-            + (1| State), data=data, REML = F)
+re1 <- lmer(log(NumHomicides) ~ NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(LawEnforcementOfficers) +
+            log(Firearms) + (PermitAllFirearms + ReportAllFirearms + GunRegistration) + CannabisRecreational + CannabisMedical
+            + (1| State) +  (1 | Year) + Black + Hispanic + Asian + Children18orUnder + Adult19to25 + Education, data=data, REML = F)
 stargazer::stargazer(lm1, lm2, re1, type="text", single.row = T)
-summary(re1)
-as.data.frame(ranef(re1))
+# summary(re1)
+# as.data.frame(ranef(re1))
 ```
+
+```{r}
+ranef(re1)
+```
+
+
 
 ## Assumption Checking LMM
 ```{r}
@@ -291,4 +304,39 @@ acf(residuals(re1))
 - Try Next:
     - stacked level of gun laws, marijuana laws
     - glmer
+
+## Lags
+```{r}
+# testing lags
+data <- data %>%
+  arrange(Year) %>%
+  group_by(State) %>%
+  mutate(OneLagLawEnforcement = lag(LawEnforcementOfficers),
+         OneLagGunPermit = lag(PermitAllFirearms),
+         OneLagGunRegister = lag(GunRegistration),
+         OnelagGunReport = lag(ReportAllFirearms),
+         OneLagFireArms = lag(Firearms))
+
+```
+
+
+```{r}
+re2 <- lmer(log(NumHomicides) ~ NumDrugUsers + NumAlcoholUsers + SeriousMentalIllness +
+            GiniIndex + UnemploymentRate + log(RealGDP) + log(OneLagLawEnforcement) +
+            log(Firearms)*(OneLagGunRegister+OneLagGunPermit) + OnelagGunReport  + CannabisRecreational+ 
+            CannabisMedical + (1| State) +  (1 | Year) + Black + Hispanic + Asian + Children18orUnder + Adult19to25 + Education, 
+            data=data, REML = F)
+stargazer::stargazer( re1, re2, type="text", single.row = T)
+```
+
+
+```{r}
+vif(re2)
+```
+
+
+```{r}
+acf(data%>%filter(State=="CALIFORNIA")%>%pull(NumHomicides))
+pacf(data%>%filter(State=="CALIFORNIA")%>%pull(NumHomicides))
+```
 
