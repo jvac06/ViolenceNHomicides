@@ -41,7 +41,7 @@ options(scipen = 999)
 df<-read_xlsx("data/HomicideData_Hammad.xlsx",sheet = "HomicideData")
 ```
 
-## Checking for nulls
+## Checking for nulls and datatypes
 ```{r}
 colSums(is.na(df))
 str(df)
@@ -60,12 +60,29 @@ df$State<-as.factor(df$State)
 df$CannabisMedical<-as.factor(df$CannabisMedical)
 df$CannabisRecreational<-as.factor(df$CannabisRecreational)
 df$Region<-as.factor(df$Region)
+
+cols <- c("relinquishment", "recordsall",                           "recordsallh",                          "recordsdealer",                       
+ "recordsdealerh",                       "reportall" ,                           "reportallh"  ,                        
+ "reportdealer" ,                        "reportdealerh"     ,                   "purge"             ,                  
+ "registration",                         "registrationh"    ,                    "defactoreg" ,                         
+ "defactoregh"  ,                        "UniversalBackgroundChecksAllFirearms", "UniversalBackgroundChecksHandguns"  , 
+ "WaitingPeriodAllFirearms"     ,        "WaitingPeriodHandguns"       ,         "PermitAllFirearms"    ,               
+ "PermitHandguns"      ,                 "PermitCarryingConcealedWeapons"   ,    "BanAssaultWeapons"     ,              
+ "BackgroundCheckGunshowsFirearms"  ,    "BackgroundCheckGunshowsHandguns"     )
+for (col in cols){
+  df[[col]] <- factor(df[[col]], levels = c(0,1), labels = c("No", "Yes"))  
+}
 ```
 
-## Calculating Homicide Rate
+## Calculating Homicide Rate and violent crime rate per 100,000 people
 ```{r}
 df$HomicideRate<-(df$NumHomicides/df$Population)*100000
+df$CrimeRate<-(df$ViolentCrime/df$Population)*100000
 glimpse(df)
+```
+```{r}
+df$PopulationDensity<-df$Population/df$Area
+df$Firearm<-df$TotalWeapons-df$Silencer4
 ```
 
 ## Scaling all numerical variables according to population for easier interpretation
@@ -77,6 +94,7 @@ df$LawCover<-(df$LawEnforcementOfficers/df$Area)*100
 df$GDP<-df$RealGDPperCapita/1000
 df$MentalIllness<-(df$SeriousMentalIllness/df$Population)*1000
 df$WeaponProliferation<-df$TotalWeapons/df$Population*1000
+df$FirearmProliferation<-df$Firearm/df$Population*1000
 summary(df$WeaponProliferation)
 ```
 
@@ -294,10 +312,10 @@ ggplot(data=df, aes(x=HomicideRate, group = GunLawRank, fill = GunLawRank)) +
   geom_density(alpha=.6, na.rm=T) +
   labs(title = "Distribution of Homicide Rate by Gun Laws Rank")
 
-ggplot(df, aes(x=Year, y=HomicideRate)) +
+ggplot(df, aes(x=Black, y=HomicideRate)) +
   geom_point() +
   geom_smooth()+
-  labs(title="Relationship Log Beds vs. NumHomicides/Population")
+  labs(title="Black vs. NumHomicides/Population")
 
 
 
@@ -343,9 +361,10 @@ knitr::opts_chunk$set(echo = TRUE,fig.width = 12,fig.height = 12)
 ```
 
 ```{r}
-numerics=df[c('HomicideRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','GiniIndex','UnenemploymentRate','Black','Adults 19-25','Education','GunLawStrictness')]
+numerics=df[c('HomicideRate','CrimeRate','DrugUsers','AlcoholUsers','LawOfficers','LawCover','GDP','MentalIllness','WeaponProliferation','FirearmProliferation','GiniIndex','UnemploymentRate','Black','Hispanic','Adults 19-25','Education','GunLawStrictness','PopulationDensity')]
 correlations=cor(numerics,use = "pairwise.complete.obs")
 corrplot(correlations,method = "number",type="upper")
+
 ```
 ```{r}
 knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.5)
@@ -353,22 +372,11 @@ knitr::opts_chunk$set(echo = TRUE,fig.width = 8,fig.height = 5.5)
 
 ## OLS Model without log
 ```{r}
-reg1<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+WeaponProliferation+Education,data = df)
+reg1<-lm(formula = HomicideRate~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnemploymentRate+WeaponProliferation+Education,data = df)
 
 summary(reg1)
 plot(reg1)
 
-#Checking for linearity
-#plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
-#abline(0,1,col="red3",lwd=3)
-
-#checking for normality
-qqnorm(reg1$residuals,pch=20,main="Checking for Normality Plot")
-qqline(reg1$residuals,lwd=3,col="red3")
-
-#Checking for equality of variances
-#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
-#abline(0,0,col="red",lwd=3)
 
 #Checking for leverage points
 lev=hat(model.matrix(reg1))
@@ -380,24 +388,11 @@ abline(3*mean(lev),0,col="red",lwd=3)
 
 ## OLS with log
 ```{r}
-reg3<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnenemploymentRate+WeaponProliferation+Education,data = df)
+reg3<-lm(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+`Big Cities`+GunLawRank+Black+GiniIndex+Year+UnemploymentRate+WeaponProliferation+Education,data = df)
 summary(reg3)
 
 plot(reg3)
 vif(reg3)
-
-#Checking for linearity
-#plot(reg1$fitted.values,df$HomicideRate,pch=1,main="Predicted Values vs Actual Price",ylab = "Predicted Price Sold",xlab = "Actual Price Sold")
-#abline(0,1,col="red3",lwd=3)
-
-#checking for normality
-qqnorm(reg3$residuals,pch=20,main="Checking for Normality Plot")
-qqline(reg3$residuals,lwd=3,col="red3")
-
-#Checking for equality of variances
-#plot(df$HomicideRate,rstandard(reg1),pch=20,main="Equality of Variances")
-#abline(0,0,col="red",lwd=3)
-
 #Checking for leverage points
 lev=hat(model.matrix(reg3))
 plot(lev,pch=20,ylim=c(0,.3),main="Leverage Points")
@@ -405,49 +400,28 @@ abline(3*mean(lev),0,col="red",lwd=3)
 ```
 ## LMER with FE (States)
 ```{r}
-reg2<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
+reg2<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnemploymentRate+Education+WeaponProliferation,data = df)
 summary(reg2)
 vif(reg2)
 AIC(reg1)
 AIC(reg2)
 AIC (reg3)
 ```
-## Same model without year as a factor
+## Creating Lags
 ```{r}
-reg4<-lmer(formula = log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+UnenemploymentRate+Education+WeaponProliferation,data = df)
-AIC(reg4)
-summary(reg4)
-```
-
-## Same model in GLMER
-```{r}
-reg5<-glmer(log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "gaussian")
-summary(reg5)
-AIC(reg5)
-```
-
-```{r}
-df$HomicideRate2<-df$HomicideRate*10
-summary(df$HomicideRate2)
-df$HomicideRate2<-round(df$HomicideRate2,0)
-```
-## Now Running Poisson
-```{r}
-reg6<-glmer(HomicideRate2~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "poisson")
-vif(reg6)
-AIC(reg6)
-```
-
-```{r}
-#reg7<-glmer.nb(log(HomicideRate2)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawRank+Region+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df)
-#AIC(reg7)
-```
-## GLMER with state random effect and numeric gun laws - No region - VIF pass
-```{r}
-reg7<-glmer(log(HomicideRate)~MentalIllness+GDP+LawOfficers+LawCover+AlcoholUsers+DrugUsers+df$`Big Cities`+GunLawStrictness+Black+GiniIndex+(1|State)+(1|Year)+UnenemploymentRate+Education+WeaponProliferation,data = df,family = "gaussian")
-summary(reg7)
-AIC(reg7)
-vif(reg7)
+df <- df %>% rename(ReportAllFirearms = reportall, 
+                    GunRegistration = defactoreg,
+                        RelinquishGun = relinquishment,
+                        Adult19to25 = `Adults 19-25`,
+                        Adult26to34 = `Adults 26-34`)
+df <- df %>%
+  arrange(Year) %>%
+  group_by(State) %>%
+  mutate(OneLagLawEnforcement = lag(LawEnforcementOfficers),
+         OneLagGunPermit = lag(PermitAllFirearms),
+         OneLagGunRegister = lag(GunRegistration),
+         OneLagGunReport = lag(ReportAllFirearms),
+         OneLagGunRelinquish = lag(RelinquishGun))
 ```
 
 ```{r}
